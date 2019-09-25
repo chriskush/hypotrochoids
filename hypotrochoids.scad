@@ -1,4 +1,5 @@
 include <gears.scad>
+include <pie.scad>
 
 module hole(x, y, d)
 {
@@ -106,6 +107,50 @@ module pinion(teeth) {
       penhole(x, y);
       }
     // Done
+  }
+}
+
+module spoked_pinion(teeth, spokes) {
+  // Radius of outermost hole.
+  radius = (teeth * TOOTH_MODUL / 2) - RIM;
+  echo(radius);
+  rstep = (radius - BORE) / teeth;
+  tstep = (360 / teeth) * 8;
+  holes = floor((radius - BORE) / HOLESTEP);
+  difference() {
+    herringbone_gear (modul=TOOTH_MODUL, tooth_number=teeth, width=THICCNESS, bore=0,
+    pressure_angle=20, helix_angle=30, optimized=false);
+    // Knockouts on body of gear
+    if (false) {
+      // 1/3rd from each side
+      translate([0, 0,  0.667 * THICCNESS])
+        cylinder(THICCNESS, r=radius + PINHOLE_DIAMETER/2, center=false);
+      translate([0, 0, -0.667 * THICCNESS])
+        cylinder(THICCNESS, r=radius + PINHOLE_DIAMETER/2, center=false);
+    }
+    else {
+      // 1/2 from top side
+      translate([0, 0,  0.5 * THICCNESS])
+        cylinder(THICCNESS, r=radius + PINHOLE_DIAMETER/2, center=false);
+    }
+    // Knock out pie wedges to create spokes
+    spoke_sweep = 360 / spokes;
+    for (s = [0:1:spokes]) {
+      theta = s * spoke_sweep;
+      x = BORE * cos(theta + (spoke_sweep / 2));
+      y = BORE * sin(theta + (spoke_sweep / 2));
+      translate([x, y, -500])
+        pie(radius - 2 * BORE, spoke_sweep, 1000, theta);
+    }
+    // Pen holes - must fall on spokes
+    hstep = (360 / spokes);
+    for (h = [0:1:holes]) {
+      theta = h * hstep;
+      r = radius - (h * HOLESTEP);
+      x = r * cos(theta);
+      y = r * sin(theta);
+      penhole(x, y);
+    }
   }
 }
 
