@@ -154,6 +154,25 @@ module spoked_pinion(teeth, spokes) {
   }
 }
 
+module spoked_split_pinion(teeth, splits, spokes) {
+  split_shove = 25;
+  split_sweep = 360 / splits;
+  // Repeat whole enchilada for each split
+  for (split = [0:1:splits-1]) {
+    split_theta = split * split_sweep;
+    xshove = split_shove * cos(split_theta + (split_sweep / 2));
+    yshove = split_shove * sin(split_theta + (split_sweep / 2));
+    translate([xshove, yshove, 0]) {
+      intersection() {
+        spoked_pinion(teeth, spokes);
+        // fake wedge with cube - will only work for 4 splits
+        rotate([0, 0, split_theta])
+          cube([1000, 1000, 1000]);
+      }
+    }
+  }
+}
+
 //rack_and_pinion (modul=1, rack_length=50, gear_teeth=30, rack_height=4, gear_bore=4, width=5, pressure_angle=20, helix_angle=0, together_built=true, optimized=true);
 
 //ring_gear (modul=1, tooth_number=30, width=5, rim_width=3, pressure_angle=20, helix_angle=20);
