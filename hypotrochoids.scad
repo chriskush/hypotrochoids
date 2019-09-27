@@ -156,7 +156,7 @@ module spoked_pinion(teeth, spokes, holeskip = 1) {
 }
 
 module split_ring(teeth, splits) {
-  split_shove = 14.14;
+  split_shove = 50.8;
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
@@ -179,16 +179,16 @@ module split_ring(teeth, splits) {
               cube([2000, 2000, 2000]);
         }
         // Negative dovetail knockouts
-        // rotate([0, 0, split_theta])
-        //   for(dovex = [20, 60, 100, 140])
-        //     translate([dovex, 0, 0])
-        //       dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=false);
+        rotate([0, 0, split_theta])
+          for(dovex = [382])
+            translate([dovex, 0, 0])
+              dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS, sense=false);
       }
       // Positive dovetail addons
-      // rotate([0, 0, split_theta + split_sweep])
-      //   for(dovex = [20, 60, 100, 140])
-      //     translate([dovex, 0, 0])
-      //       dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=true);
+      rotate([0, 0, split_theta + split_sweep])
+        for(dovex = [382])
+          translate([dovex, 0, 0])
+            dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS, sense=true);
     }
   }
 }
@@ -222,13 +222,13 @@ module spoked_split_pinion(teeth, splits, spokes) {
           rotate([0, 0, split_theta])
             for(dovex = [20, 60, 100, 140])
               translate([dovex, 0, 0])
-                dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=false);
+                dovetail(nose=18, tail=22, depth=4, thickness=THICCNESS/2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
           for(dovex = [20, 60, 100, 140])
             translate([dovex, 0, 0])
-              dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=true);
+              dovetail(nose=18, tail=22, depth=4, thickness=THICCNESS/2, sense=true);
       }
     }
   }
