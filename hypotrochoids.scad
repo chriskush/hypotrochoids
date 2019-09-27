@@ -155,6 +155,44 @@ module spoked_pinion(teeth, spokes, holeskip = 1) {
   }
 }
 
+module split_ring(teeth, splits) {
+  split_shove = 14.14;
+  split_sweep = 360 / splits;
+  // Repeat whole enchilada for each split
+  for (split = [0:1:splits-1]) {
+    split_theta = split * split_sweep;
+    xshove = split_shove * cos(split_theta + (split_sweep / 2));
+    yshove = split_shove * sin(split_theta + (split_sweep / 2));
+    // Shove the split away from the X/Y origin
+    translate([xshove, yshove, 0]) {
+      // Intersect the ring with two halfspaces which create the split-sector
+      difference() {
+        intersection() {
+          ring(teeth);
+          // Half-space starting at theta
+          rotate([0, 0, split_theta])
+            translate([-1000, 0, 0])
+              cube([2000, 2000, 2000]);
+          // Half-space ending at (theta + sweep)
+          rotate([0, 0, 180 + split_theta + split_sweep])
+            translate([-1000, 0, 0])
+              cube([2000, 2000, 2000]);
+        }
+        // Negative dovetail knockouts
+        // rotate([0, 0, split_theta])
+        //   for(dovex = [20, 60, 100, 140])
+        //     translate([dovex, 0, 0])
+        //       dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=false);
+      }
+      // Positive dovetail addons
+      // rotate([0, 0, split_theta + split_sweep])
+      //   for(dovex = [20, 60, 100, 140])
+      //     translate([dovex, 0, 0])
+      //       dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=true);
+    }
+  }
+}
+
 module spoked_split_pinion(teeth, splits, spokes) {
   split_shove = 14.14;
   split_sweep = 360 / splits;
