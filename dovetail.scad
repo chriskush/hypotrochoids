@@ -13,3 +13,24 @@ module dovetail(nose, tail, depth, thickness, sense) {
       polygon([ [-nose / 2, 0], [nose / 2, 0],
                 [tail / 2, depth], [-tail / 2, depth] ]);
 }
+
+dovetail_example();
+module dovetail_example() {
+  thickness=3.30;
+  // Yin
+  translate([-20, -10]) {
+    union() {
+      cube([40, 5, thickness]);
+      translate([20, 5])
+        dovetail(nose=20, tail=24, depth=4, thickness=thickness, sense=true);
+    }
+  }
+  // Yang
+  translate([-20, 4]) {
+    difference() {
+      cube([40, 15, thickness]);
+      translate([20, 0])
+        dovetail(nose=20, tail=24, depth=4, thickness=thickness, sense=false);
+    }
+  }
+}

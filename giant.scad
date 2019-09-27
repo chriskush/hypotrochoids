@@ -12,7 +12,7 @@ HOLESTEP = 6.35;
 LIPPS=1;
 
 include <hypotrochoids.scad>
-include <dovetail.scad>
+use <dovetail.scad>
 
 //ring(144);
 //spoked_pinion(66, 6);

@@ -1,6 +1,6 @@
 include <gears.scad>
 include <pie.scad>
-include <dovetail.scad>
+use <dovetail.scad>
 
 module hole(x, y, d)
 {
