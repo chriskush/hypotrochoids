@@ -156,7 +156,7 @@ module spoked_pinion(teeth, spokes, holeskip = 1) {
 }
 
 module spoked_split_pinion(teeth, splits, spokes) {
-  split_shove = 25;
+  split_shove = 14.14;
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
@@ -182,13 +182,15 @@ module spoked_split_pinion(teeth, splits, spokes) {
           }
           // Negative dovetail knockouts
           rotate([0, 0, split_theta])
-            translate([100, 0, -1])
-              dovetail(nose=20, tail=22, depth=2, thickness=THICCNESS);
+            for(dovex = [20, 60, 100, 140])
+              translate([dovex, 0, 0])
+                dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
-          translate([100, 0, 0])
-            dovetail(nose=20, tail=22, depth=2, thickness=THICCNESS/2);
+          for(dovex = [20, 60, 100, 140])
+            translate([dovex, 0, 0])
+              dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS/2, sense=true);
       }
     }
   }
