@@ -1,5 +1,6 @@
 include <gears.scad>
 include <pie.scad>
+include <dovetail.scad>
 
 module hole(x, y, d)
 {
@@ -110,7 +111,7 @@ module pinion(teeth) {
   }
 }
 
-module spoked_pinion(teeth, spokes) {
+module spoked_pinion(teeth, spokes, holeskip = 1) {
   // Radius of outermost hole.
   radius = (teeth * TOOTH_MODUL / 2) - RIM;
   echo(radius);
@@ -145,7 +146,7 @@ module spoked_pinion(teeth, spokes) {
     // Pen holes - must fall on spokes
     hstep = (360 / spokes);
     for (h = [0:1:holes]) {
-      theta = h * hstep;
+      theta = ((h * holeskip) + (holeskip > 1 ? 1 : 0)) * hstep;
       r = radius - (h * HOLESTEP);
       x = r * cos(theta);
       y = r * sin(theta);
@@ -162,16 +163,32 @@ module spoked_split_pinion(teeth, splits, spokes) {
     split_theta = split * split_sweep;
     xshove = split_shove * cos(split_theta + (split_sweep / 2));
     yshove = split_shove * sin(split_theta + (split_sweep / 2));
+    // Shove the split away from the X/Y origin
     translate([xshove, yshove, 0]) {
-      intersection() {
-        spoked_pinion(teeth, spokes);
-        // fake wedge with cube - will only work for 4 splits
-        rotate([0, 0, split_theta])
-          translate([-500, 0, 0])
-            cube([1000, 1000, 1000]);
-        rotate([0, 0, 180 + split_theta + split_sweep])
-          translate([-500, 0, 0])
-            cube([1000, 1000, 1000]);
+      // Intersect the pinion with two halfspaces which create the split-sector
+      union() {
+        difference() {
+          // The pinion sector
+          intersection() {
+            spoked_pinion(teeth, spokes, 2);
+            // Half-space starting at theta
+            rotate([0, 0, split_theta])
+              translate([-500, 0, 0])
+                cube([1000, 1000, 1000]);
+            // Half-space ending at (theta + sweep)
+            rotate([0, 0, 180 + split_theta + split_sweep])
+              translate([-500, 0, 0])
+                cube([1000, 1000, 1000]);
+          }
+          // Negative dovetail knockouts
+          rotate([0, 0, split_theta])
+            translate([100, 0, -1])
+              dovetail(nose=20, tail=22, depth=2, thickness=THICCNESS);
+        }
+        // Positive dovetail addons
+        rotate([0, 0, split_theta + split_sweep])
+          translate([100, 0, 0])
+            dovetail(nose=20, tail=22, depth=2, thickness=THICCNESS/2);
       }
     }
   }
