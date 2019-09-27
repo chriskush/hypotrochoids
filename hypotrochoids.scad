@@ -167,7 +167,11 @@ module spoked_split_pinion(teeth, splits, spokes) {
         spoked_pinion(teeth, spokes);
         // fake wedge with cube - will only work for 4 splits
         rotate([0, 0, split_theta])
-          cube([1000, 1000, 1000]);
+          translate([-500, 0, 0])
+            cube([1000, 1000, 1000]);
+        rotate([0, 0, 180 + split_theta + split_sweep])
+          translate([-500, 0, 0])
+            cube([1000, 1000, 1000]);
       }
     }
   }
