@@ -49,13 +49,13 @@ module pie(radius, angle, height, spin=0) {
  * example of the functions it provides.  This example will *not* render if this module
  * is imported into your own project via the `use` statement.
  */
-// pie_example();
-// module pie_example($fn=100) {
-//     union() {
-//         pie(40, 45, 5);
-//         rotate([0,0,-5]) difference() {
-//             sphere(r=25);
-//             translate([0,0,-30]) pie(50, -45, 60, 15);
-//         }
-//     }
-// }
+pie_example();
+module pie_example($fn=100) {
+    union() {
+        pie(40, 45, 5);
+        rotate([0,0,-5]) difference() {
+            sphere(r=25);
+            translate([0,0,-30]) pie(50, -45, 60, 15);
+        }
+    }
+}
