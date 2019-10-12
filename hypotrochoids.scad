@@ -141,7 +141,10 @@ module spoked_pinion(teeth, spokes, holeskip = 1) {
       x = BORE * cos(theta + (spoke_sweep / 2));
       y = BORE * sin(theta + (spoke_sweep / 2));
       translate([x, y, -500])
-        pie(radius - 2 * BORE, spoke_sweep, 1000, theta);
+        // Radius was formerly 2*BORE, but this leaves too much
+	// material. Would be nicer if this was beveled to the
+	// gear rim, instead of stairstepping.
+        pie(radius - 1.1 * BORE, spoke_sweep, 1000, theta);
     }
     // Pen holes - must fall on spokes
     hstep = (360 / spokes);
@@ -205,6 +208,8 @@ module spoked_split_pinion(teeth, splits, spokes) {
     translate([xshove, yshove, 0]) {
       // Intersect the pinion with two halfspaces which create the split-sector
       union() {
+        //doveXs = [20, 60, 100, 140]; // For the 66-tooth
+        doveXs = [20, 70, 120, 170]; // For the 78-tooth
         difference() {
           // The pinion sector
           intersection() {
@@ -220,13 +225,13 @@ module spoked_split_pinion(teeth, splits, spokes) {
           }
           // Negative dovetail knockouts
           rotate([0, 0, split_theta])
-            for(dovex = [20, 60, 100, 140])
+            for(dovex = doveXs)
               translate([dovex, 0, 0])
                 dovetail(nose=18, tail=22, depth=4, thickness=THICCNESS/2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
-          for(dovex = [20, 60, 100, 140])
+          for(dovex = doveXs)
             translate([dovex, 0, 0])
               dovetail(nose=18, tail=22, depth=4, thickness=THICCNESS/2, sense=true);
       }
