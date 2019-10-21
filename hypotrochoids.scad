@@ -37,6 +37,9 @@ Tick_Mark_Width = 1;
 // Relief height/depth of marks.
 Mark_Relief = 0.2;
 
+// Twist of split-lines relative to part, in degrees.
+Split_Twist = 0.001;
+
 // How far away from origin to nudge splits?
 Split_Shove = 38.1;
 
@@ -196,7 +199,7 @@ module split_ring(teeth, splits) {
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
-    split_theta = split * split_sweep;
+    split_theta = Split_Twist + (split * split_sweep);
     xshove = Split_Shove * cos(split_theta + (split_sweep / 2));
     yshove = Split_Shove * sin(split_theta + (split_sweep / 2));
     // Shove the split away from the X/Y origin
@@ -234,7 +237,7 @@ module spoked_split_pinion(teeth, splits) {
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
-    split_theta = split * split_sweep;
+    split_theta = Split_Twist + (split * split_sweep);
     xshove = Split_Shove * cos(split_theta + (split_sweep / 2));
     yshove = Split_Shove * sin(split_theta + (split_sweep / 2));
     // Shove the split away from the X/Y origin
