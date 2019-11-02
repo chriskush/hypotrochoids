@@ -1,5 +1,6 @@
 include <gears.scad>
 include <pie.scad>
+use <dovetail.scad>
 
 module hole(x, y, d)
 {
@@ -110,7 +111,7 @@ module pinion(teeth) {
   }
 }
 
-module spoked_pinion(teeth, spokes) {
+module spoked_pinion(teeth, spokes, holeskip = 1) {
   // Radius of outermost hole.
   radius = (teeth * TOOTH_MODUL / 2) - RIM;
   echo(radius);
@@ -140,16 +141,100 @@ module spoked_pinion(teeth, spokes) {
       x = BORE * cos(theta + (spoke_sweep / 2));
       y = BORE * sin(theta + (spoke_sweep / 2));
       translate([x, y, -500])
-        pie(radius - 2 * BORE, spoke_sweep, 1000, theta);
+        // Radius was formerly 2*BORE, but this leaves too much
+	// material. Would be nicer if this was beveled to the
+	// gear rim, instead of stairstepping.
+        pie(radius - 1.1 * BORE, spoke_sweep, 1000, theta);
     }
     // Pen holes - must fall on spokes
     hstep = (360 / spokes);
     for (h = [0:1:holes]) {
-      theta = h * hstep;
+      theta = ((h * holeskip) + (holeskip > 1 ? 1 : 0)) * hstep;
       r = radius - (h * HOLESTEP);
       x = r * cos(theta);
       y = r * sin(theta);
       penhole(x, y);
+    }
+  }
+}
+
+module split_ring(teeth, splits) {
+  split_shove = 50.8;
+  split_sweep = 360 / splits;
+  // Repeat whole enchilada for each split
+  for (split = [0:1:splits-1]) {
+    split_theta = split * split_sweep;
+    xshove = split_shove * cos(split_theta + (split_sweep / 2));
+    yshove = split_shove * sin(split_theta + (split_sweep / 2));
+    // Shove the split away from the X/Y origin
+    translate([xshove, yshove, 0]) {
+      // Intersect the ring with two halfspaces which create the split-sector
+      difference() {
+        intersection() {
+          ring(teeth);
+          // Half-space starting at theta
+          rotate([0, 0, split_theta])
+            translate([-1000, 0, 0])
+              cube([2000, 2000, 2000]);
+          // Half-space ending at (theta + sweep)
+          rotate([0, 0, 180 + split_theta + split_sweep])
+            translate([-1000, 0, 0])
+              cube([2000, 2000, 2000]);
+        }
+        // Negative dovetail knockouts
+        rotate([0, 0, split_theta])
+          for(dovex = [382])
+            translate([dovex, 0, 0])
+              dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS, sense=false);
+      }
+      // Positive dovetail addons
+      rotate([0, 0, split_theta + split_sweep])
+        for(dovex = [382])
+          translate([dovex, 0, 0])
+            dovetail(nose=20, tail=24, depth=4, thickness=THICCNESS, sense=true);
+    }
+  }
+}
+
+module spoked_split_pinion(teeth, splits, spokes) {
+  split_shove = 14.14;
+  split_sweep = 360 / splits;
+  // Repeat whole enchilada for each split
+  for (split = [0:1:splits-1]) {
+    split_theta = split * split_sweep;
+    xshove = split_shove * cos(split_theta + (split_sweep / 2));
+    yshove = split_shove * sin(split_theta + (split_sweep / 2));
+    // Shove the split away from the X/Y origin
+    translate([xshove, yshove, 0]) {
+      // Intersect the pinion with two halfspaces which create the split-sector
+      union() {
+        //doveXs = [20, 60, 100, 140]; // For the 66-tooth
+        doveXs = [20, 70, 120, 170]; // For the 78-tooth
+        difference() {
+          // The pinion sector
+          intersection() {
+            spoked_pinion(teeth, spokes, 2);
+            // Half-space starting at theta
+            rotate([0, 0, split_theta])
+              translate([-500, 0, 0])
+                cube([1000, 1000, 1000]);
+            // Half-space ending at (theta + sweep)
+            rotate([0, 0, 180 + split_theta + split_sweep])
+              translate([-500, 0, 0])
+                cube([1000, 1000, 1000]);
+          }
+          // Negative dovetail knockouts
+          rotate([0, 0, split_theta])
+            for(dovex = doveXs)
+              translate([dovex, 0, 0])
+                dovetail(nose=18, tail=22, depth=4, thickness=THICCNESS/2, sense=false);
+        }
+        // Positive dovetail addons
+        rotate([0, 0, split_theta + split_sweep])
+          for(dovex = doveXs)
+            translate([dovex, 0, 0])
+              dovetail(nose=18, tail=22, depth=4, thickness=THICCNESS/2, sense=true);
+      }
     }
   }
 }
