@@ -43,6 +43,15 @@ Split_Twist = 0.001;
 // How far away from origin to nudge splits?
 Split_Shove = 38.1;
 
+// Width of dovetail neck
+Dovetail_Neck = 20;
+
+// Width of dovetail flare
+Dovetail_Tail = 24;
+
+// Protrusion of dovetail tab
+Dovetail_Depth = 4;
+
 use <gears.scad>
 use <pie.scad>
 use <dovetail.scad>
@@ -68,7 +77,6 @@ module penhole(x, y, d)
 
 module ring(teeth, pinhole_count) {
   radius = (teeth * Tooth_Module / 2);
-  echo(radius);
   difference() {
     union() {
       herringbone_ring_gear(Tooth_Module, teeth, Part_Thickness, Ring_Rind,
@@ -104,7 +112,6 @@ module pinion(teeth) {
   difference() {
     // Radius of outermost hole.
     radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
-    echo(radius);
     rstep = (radius - Wheel_Bore) / teeth;
     tstep = (360 / teeth) * 8;
     holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
@@ -151,7 +158,6 @@ module pinion(teeth) {
 module spoked_pinion(teeth, spokes, holeskip = 1) {
   // Radius of outermost hole.
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
-  echo(radius);
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
   holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
@@ -197,6 +203,10 @@ module spoked_pinion(teeth, spokes, holeskip = 1) {
 
 module split_ring(teeth, splits) {
   split_sweep = 360 / splits;
+  radius = (teeth * Tooth_Module / 2);
+  doveX = radius + Ring_Rind - 3 * (Dovetail_Tail - Dovetail_Neck);
+  echo("radius", radius);
+  echo("doveX", doveX);
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
     split_theta = Split_Twist + (split * split_sweep);
@@ -219,15 +229,13 @@ module split_ring(teeth, splits) {
         }
         // Negative dovetail knockouts
         rotate([0, 0, split_theta])
-          for(dovex = [382])
-            translate([dovex, 0, 0])
-              dovetail(nose=20, tail=24, depth=4, thickness=Part_Thickness, sense=false);
+          translate([doveX, 0, 0])
+            dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness, sense=false);
       }
       // Positive dovetail addons
       rotate([0, 0, split_theta + split_sweep])
-        for(dovex = [382])
-          translate([dovex, 0, 0])
-            dovetail(nose=20, tail=24, depth=4, thickness=Part_Thickness, sense=true);
+        translate([doveX, 0, 0])
+          dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness, sense=true);
     }
   }
 }
@@ -246,7 +254,7 @@ module spoked_split_pinion(teeth, splits) {
       union() {
         //doveXs = [20, 60, 100, 140]; // For the 66-tooth
         //doveXs = [20, 70, 120, 170]; // For the 78-tooth
-        doveXs = [140, 190, 240, 290]; // For the 126-tooth
+        //doveXs = [140, 190, 240, 290]; // For the 126-tooth
         difference() {
           // The pinion sector
           intersection() {
@@ -264,13 +272,15 @@ module spoked_split_pinion(teeth, splits) {
           rotate([0, 0, split_theta])
             for(dovex = doveXs)
               translate([dovex, 0, 0])
+                dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=false);
+
                 dovetail(nose=18, tail=22, depth=4, thickness=Part_Thickness/2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
           for(dovex = doveXs)
             translate([dovex, 0, 0])
-              dovetail(nose=18, tail=22, depth=4, thickness=Part_Thickness/2, sense=true);
+              dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
       }
     }
   }
@@ -288,7 +298,6 @@ if (Part_Type == "Wheel") {
   else {
     difference() {
       spoked_split_pinion(Tooth_Count, Splits);
-      cylinder(1000, r=170, center=true);
     }
   }
 }
