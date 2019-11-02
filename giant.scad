@@ -1,16 +1,3 @@
-TOOTH_MODUL = 5;
-PINHOLE_DIAMETER = 5;
-PENHOLE_DIAMETER = 10; // Wild guess for standard Sharpies
-THICCNESS = 10; // Best to be an odd number of layers (?)
-RIM = TOOTH_MODUL * 3;
-RIND = 25.4 + 12.7;
-PINCOUNT = 12;
-TICKWIDTH = 1;
-TICKRELIEF = 0.2;
-BORE = 25.4 + 6.35;
-HOLESTEP = 6.35;
-LIPPS=1;
-
 include <hypotrochoids.scad>
 use <dovetail.scad>
 

@@ -34,12 +34,8 @@ module dovetail(nose, tail, depth, thickness, sense) {
 }
 
 dovetail_example();
+
 $fs = 0.5;
-module dovetail_example_base() {
-  thickness=5;
-  // Yang
-  dovetail(nose=20, tail=24, depth=4, thickness=thickness, sense=true);
-}
 
 module dovetail_example() {
   thickness=5;
