@@ -14,7 +14,7 @@ Tooth_Module = 5;
 Wheel_Hole_Step = 6.35;
 
 // Radius of unusable center area of wheels.
-Wheel_Bore = 25.4 + 6.35;
+Wheel_Bore = 31.75;
 
 // Amount of unusable outer part of wheels.
 Wheel_Rim = Tooth_Module * 3;
@@ -245,7 +245,8 @@ module spoked_split_pinion(teeth, splits) {
       // Intersect the pinion with two halfspaces which create the split-sector
       union() {
         //doveXs = [20, 60, 100, 140]; // For the 66-tooth
-        doveXs = [20, 70, 120, 170]; // For the 78-tooth
+        //doveXs = [20, 70, 120, 170]; // For the 78-tooth
+        doveXs = [140, 190, 240, 290]; // For the 126-tooth
         difference() {
           // The pinion sector
           intersection() {
@@ -285,7 +286,10 @@ if (Part_Type == "Wheel") {
     pinion(Tooth_Count);
   }
   else {
-    spoked_split_pinion(Tooth_Count, Splits);
+    difference() {
+      spoked_split_pinion(Tooth_Count, Splits);
+      cylinder(1000, r=170, center=true);
+    }
   }
 }
 else if (Part_Type == "Ring") {
