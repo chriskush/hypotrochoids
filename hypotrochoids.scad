@@ -241,6 +241,7 @@ module split_ring(teeth, splits) {
 }
 
 module spoked_split_pinion(teeth, splits) {
+  radius = (teeth * Tooth_Module / 2);
   spokes = 2 * splits;
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
@@ -252,9 +253,6 @@ module spoked_split_pinion(teeth, splits) {
     translate([xshove, yshove, 0]) {
       // Intersect the pinion with two halfspaces which create the split-sector
       union() {
-        //doveXs = [20, 60, 100, 140]; // For the 66-tooth
-        //doveXs = [20, 70, 120, 170]; // For the 78-tooth
-        //doveXs = [140, 190, 240, 290]; // For the 126-tooth
         difference() {
           // The pinion sector
           intersection() {
@@ -270,15 +268,13 @@ module spoked_split_pinion(teeth, splits) {
           }
           // Negative dovetail knockouts
           rotate([0, 0, split_theta])
-            for(dovex = doveXs)
+            for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Dovetail_Tail])
               translate([dovex, 0, 0])
                 dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=false);
-
-                dovetail(nose=18, tail=22, depth=4, thickness=Part_Thickness/2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
-          for(dovex = doveXs)
+          for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Dovetail_Tail])
             translate([dovex, 0, 0])
               dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
       }
