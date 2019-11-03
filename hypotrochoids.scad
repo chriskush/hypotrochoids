@@ -20,10 +20,10 @@ Wheel_Bore = 31.75;
 Wheel_Rim = Tooth_Module * 3;
 
 // Width of spokes for split wheels
-Wheel_Spoke_Width = 15;
+Wheel_Spoke_Width = 20;
 
 // Breadth of ring segments.
-Ring_Rind = 25.4 + 12.7;
+Ring_Rind = 38.1;
 
 // Thickness of parts (at gear teeth).
 Part_Thickness = 10;
@@ -177,7 +177,8 @@ module spoked_wheel(teeth, spokes, holeskip = 1) {
       // Add spokes
       for (s = [0:1:spokes]) {
         rotate([0, 0, s * (360 / spokes)])
-          translate([0, -Wheel_Spoke_Width / 2, 0])
+          // Translate by *0.333 (or something Dove_Depth-based) for non-hole spokes to even out dovetails
+          translate([0, -Wheel_Spoke_Width * 0.5, 0])
             cube([radius, Wheel_Spoke_Width, Part_Thickness / 2]);
       }
     }
@@ -190,6 +191,9 @@ module spoked_wheel(teeth, spokes, holeskip = 1) {
       y = r * sin(theta);
       penhole(x, y);
     }
+    // Delete any useless middle (how much?)
+    // translate([0, 0, -Part_Thickness / 2])
+    //   cylinder(h=Part_Thickness * 2, r=Wheel_Bore);
   }
 }
 
