@@ -158,7 +158,7 @@ module wheel(teeth) {
   }
 }
 
-module spoked_wheel(teeth, spokes, holeskip = 1) {
+module spoked_wheel(teeth, spokes, holeskip = true) {
   // Radius of outermost hole.
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
@@ -176,16 +176,23 @@ module spoked_wheel(teeth, spokes, holeskip = 1) {
       }
       // Add spokes
       for (s = [0:1:spokes]) {
-        rotate([0, 0, s * (360 / spokes)])
-          // Translate by *0.333 (or something Dove_Depth-based) for non-hole spokes to even out dovetails
-          translate([0, -Wheel_Spoke_Width * 0.5, 0])
+        rotate([0, 0, s * (360 / spokes)]) {
+          // Translate by *0.333 (or something Dovetail_Depth-based) for non-hole spokes to even out dovetails
+          spokeSlide = (holeskip && ((s % 2) == 0))
+            ? (Wheel_Spoke_Width / 2) - Dovetail_Depth
+            : (Wheel_Spoke_Width / 2); 
+          translate([0, -spokeSlide, 0])
             cube([radius, Wheel_Spoke_Width, Part_Thickness / 2]);
+        }
       }
     }
     // Pen holes - must fall on spokes
-    hstep = (360 / spokes);
     for (h = [0:1:holes]) {
-      theta = ((h * holeskip) + (holeskip > 1 ? 1 : 0)) * hstep;
+      // Map hole to spoke. Skip even-numbered spokes if requested, to
+      // accomodate splitting. 
+      s = holeskip ? (2 * h) + 1 : h;
+      theta = s * (360 / spokes);
+      //theta = ((h * (holeskip ? 2 : 1)) + (holeskip ? 1 : 0)) * (360 / spokes);
       r = radius - (h * Wheel_Hole_Step);
       x = r * cos(theta);
       y = r * sin(theta);
@@ -252,7 +259,7 @@ module spoked_split_wheel(teeth, splits) {
         difference() {
           // The wheel sector
           intersection() {
-            spoked_wheel(teeth, spokes, 2);
+            spoked_wheel(teeth, spokes, true);
             // Half-space starting at theta
             rotate([0, 0, split_theta])
               translate([-500, 0, 0])
