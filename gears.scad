@@ -392,7 +392,7 @@ module ring_gear(modul, tooth_number, width, rim_width, pressure_angle = 20, hel
         }
     }
 
-    echo("Ring Gear Outer Diamater = ", 2*(ra + rim_width));
+    //echo("Ring Gear Outer Diameter = ", 2*(ra + rim_width));
     
 }
 
@@ -507,7 +507,7 @@ module bevel_gear(modul, tooth_number, partial_cone_angle, tooth_width, bore, pr
     rkf = rg_outside*sin(delta_f);                                   // Radius of the Cone Foot
     height_f = rg_outside*cos(delta_f);                               // Height of the Cone from the Root Cone
     
-    echo("Part Cone Diameter at the Cone Base = ", d_outside);
+    // echo("Part Cone Diameter at the Cone Base = ", d_outside);
     
     // Sizes for Complementary Truncated Cone
     height_k = (rg_outside-tooth_width)/cos(partial_cone_angle);          // Height of the Complementary Cone for corrected Tooth Length
@@ -516,7 +516,7 @@ module bevel_gear(modul, tooth_number, partial_cone_angle, tooth_width, bore, pr
                                                                     // Complementary Truncated Cone
     height_fk = rk*height_k/(height_k*tan(delta_f)+rk);                // height of the Complementary Truncated Cones
 
-    echo("Bevel Gear Height = ", height_f-height_fk);
+    // echo("Bevel Gear Height = ", height_f-height_fk);
     
     phi_r = sphere_ev(delta_b, partial_cone_angle);                      // Angle to Point of Involute on Partial Cone
         
@@ -618,7 +618,7 @@ module bevel_herringbone_gear(modul, tooth_number, partial_cone_angle, tooth_wid
     gamma_g = 2*atan(tooth_width*tan(helix_angle)/(2*rg_outside-tooth_width));
     gamma = 2*asin(rg_outside/r_outside*sin(gamma_g/2));
     
-    echo("Part Cone Diameter at the Cone Base = ", d_outside);
+    // echo("Part Cone Diameter at the Cone Base = ", d_outside);
     
     // Sizes for Complementary Truncated Cone
     height_k = (rg_outside-tooth_width)/cos(partial_cone_angle);      // Height of the Complementary Cone for corrected Tooth Length
@@ -657,7 +657,7 @@ module spiral_bevel_gear(modul, tooth_number, partial_cone_angle, tooth_width, b
     rg_outside = r_outside/sin(partial_cone_angle);                  // Large-Cone Radius, corresponds to the Length of the Cone-Flank;
     rg_center = rg_outside-tooth_width/2;
 
-    echo("Part Cone Diameter at the Cone Base = ", d_outside);
+    // echo("Part Cone Diameter at the Cone Base = ", d_outside);
 
     a=tan(helix_angle)/rg_center;
     
@@ -699,8 +699,8 @@ module bevel_gear_pair(modul, gear_teeth, pinion_teeth, axis_angle=90, tooth_wid
     rkf_pinion = rg*sin(delta_f_pinion);                    // Radius of the Cone Foot
     height_f_pinion = rg*cos(delta_f_pinion);                // Height of the Cone from the Root Cone
     
-    echo("Cone Angle Gear = ", delta_gear);
-    echo("Cone Angle Pinion = ", delta_pinion);
+    // echo("Cone Angle Gear = ", delta_gear);
+    // echo("Cone Angle Pinion = ", delta_pinion);
  
     df_gear = pi*rg*delta_gear/90 - 2 * (modul + c);          // Bevel Diameter on the Large Sphere 
     rf_gear = df_gear / 2;                                    // Root Cone Radius on the Large Sphere
@@ -708,8 +708,8 @@ module bevel_gear_pair(modul, gear_teeth, pinion_teeth, axis_angle=90, tooth_wid
     rkf_gear = rg*sin(delta_f_gear);                          // Radius of the Cone Foot
     height_f_gear = rg*cos(delta_f_gear);                      // Height of the Cone from the Root Cone
 
-    echo("Gear Height = ", height_f_gear);
-    echo("Pinion Height = ", height_f_pinion);
+    // echo("Gear Height = ", height_f_gear);
+    // echo("Pinion Height = ", height_f_pinion);
     
     rotate = is_even(pinion_teeth);
     
@@ -752,8 +752,8 @@ module bevel_herringbone_gear_pair(modul, gear_teeth, pinion_teeth, axis_angle=9
     rkf_pinion = rg*sin(delta_f_pinion);                    // Radius of the Cone Foot
     height_f_pinion = rg*cos(delta_f_pinion);                // Height of the Cone from the Root Cone
     
-    echo("Cone Angle Gear = ", delta_gear);
-    echo("Cone Angle Pinion = ", delta_pinion);
+    // echo("Cone Angle Gear = ", delta_gear);
+    // echo("Cone Angle Pinion = ", delta_pinion);
  
     df_gear = pi*rg*delta_gear/90 - 2 * (modul + c);          // Bevel Diameter on the Large Sphere 
     rf_gear = df_gear / 2;                                    // Root Cone Radius on the Large Sphere
@@ -761,8 +761,8 @@ module bevel_herringbone_gear_pair(modul, gear_teeth, pinion_teeth, axis_angle=9
     rkf_gear = rg*sin(delta_f_gear);                          // Radius of the Cone Foot
     height_f_gear = rg*cos(delta_f_gear);                      // Height of the Cone from the Root Cone
 
-    echo("Gear Height = ", height_f_gear);
-    echo("Pinion Height = ", height_f_pinion);
+    // echo("Gear Height = ", height_f_gear);
+    // echo("Pinion Height = ", height_f_pinion);
     
     rotate = is_even(pinion_teeth);
     
