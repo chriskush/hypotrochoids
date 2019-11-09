@@ -19,8 +19,11 @@ Wheel_Bore = 31.75;
 // Amount of unusable outer part of wheels.
 Wheel_Rim = Tooth_Module * 3;
 
+// Width of spokes for split wheels
+Wheel_Spoke_Width = 20;
+
 // Breadth of ring segments.
-Ring_Rind = 25.4 + 12.7;
+Ring_Rind = 38.1;
 
 // Thickness of parts (at gear teeth).
 Part_Thickness = 10;
@@ -108,7 +111,7 @@ module ring(teeth, pinhole_count) {
   }
 }
 
-module pinion(teeth) {
+module wheel(teeth) {
   difference() {
     // Radius of outermost hole.
     radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
@@ -155,49 +158,49 @@ module pinion(teeth) {
   }
 }
 
-module spoked_pinion(teeth, spokes, holeskip = 1) {
+module spoked_wheel(teeth, spokes, holeskip = true) {
   // Radius of outermost hole.
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
   holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
   difference() {
-    herringbone_gear (modul=Tooth_Module, tooth_number=teeth, width=Part_Thickness, bore=0,
-    pressure_angle=20, helix_angle=30, optimized=false);
-    // Knockouts on body of gear
-    if (false) {
-      // 1/3rd from each side
-      translate([0, 0,  0.667 * Part_Thickness])
-        cylinder(Part_Thickness, r=radius + Pinhole_Diameter/2, center=false);
-      translate([0, 0, -0.667 * Part_Thickness])
-        cylinder(Part_Thickness, r=radius + Pinhole_Diameter/2, center=false);
-    }
-    else {
-      // 1/2 from top side
-      translate([0, 0,  0.5 * Part_Thickness])
-        cylinder(Part_Thickness, r=radius + Pinhole_Diameter/2, center=false);
-    }
-    // Knock out pie wedges to create spokes
-    spoke_sweep = 360 / spokes;
-    for (s = [0:1:spokes]) {
-      theta = s * spoke_sweep;
-      x = Wheel_Bore * cos(theta + (spoke_sweep / 2));
-      y = Wheel_Bore * sin(theta + (spoke_sweep / 2));
-      translate([x, y, -500])
-        // Radius was formerly 2*Wheel_Bore, but this leaves too much
-	// material. Would be nicer if this was beveled to the
-	// gear rim, instead of stairstepping.
-        pie(radius - 1.1 * Wheel_Bore, spoke_sweep, 1000, theta);
+    union() {
+      difference() {
+        // Gear
+        herringbone_gear(modul=Tooth_Module, tooth_number=teeth, width=Part_Thickness, bore=2*radius - Part_Thickness,
+                        pressure_angle=20, helix_angle=30, optimized=false);
+        // Apply rim bevel
+        translate([0, 0, Part_Thickness / 2])
+          cylinder(h=Part_Thickness, r1=radius - Part_Thickness / 2, r2=radius + Part_Thickness / 2);
+      }
+      // Add spokes
+      for (s = [0:1:spokes]) {
+        rotate([0, 0, s * (360 / spokes)]) {
+          // Translate by *0.333 (or something Dovetail_Depth-based) for non-hole spokes to even out dovetails
+          spokeSlide = (holeskip && ((s % 2) == 0))
+            ? (Wheel_Spoke_Width / 2) - Dovetail_Depth
+            : (Wheel_Spoke_Width / 2); 
+          translate([0, -spokeSlide, 0])
+            cube([radius, Wheel_Spoke_Width, Part_Thickness / 2]);
+        }
+      }
     }
     // Pen holes - must fall on spokes
-    hstep = (360 / spokes);
     for (h = [0:1:holes]) {
-      theta = ((h * holeskip) + (holeskip > 1 ? 1 : 0)) * hstep;
+      // Map hole to spoke. Skip even-numbered spokes if requested, to
+      // accomodate splitting. 
+      s = holeskip ? (2 * h) + 1 : h;
+      theta = s * (360 / spokes);
+      //theta = ((h * (holeskip ? 2 : 1)) + (holeskip ? 1 : 0)) * (360 / spokes);
       r = radius - (h * Wheel_Hole_Step);
       x = r * cos(theta);
       y = r * sin(theta);
       penhole(x, y);
     }
+    // Delete any useless middle (how much?)
+    // translate([0, 0, -Part_Thickness / 2])
+    //   cylinder(h=Part_Thickness * 2, r=Wheel_Bore);
   }
 }
 
@@ -240,7 +243,7 @@ module split_ring(teeth, splits) {
   }
 }
 
-module spoked_split_pinion(teeth, splits) {
+module spoked_split_wheel(teeth, splits) {
   radius = (teeth * Tooth_Module / 2);
   spokes = 2 * splits;
   split_sweep = 360 / splits;
@@ -251,12 +254,12 @@ module spoked_split_pinion(teeth, splits) {
     yshove = Split_Shove * sin(split_theta + (split_sweep / 2));
     // Shove the split away from the X/Y origin
     translate([xshove, yshove, 0]) {
-      // Intersect the pinion with two halfspaces which create the split-sector
+      // Intersect the wheel with two halfspaces which create the split-sector
       union() {
         difference() {
-          // The pinion sector
+          // The wheel sector
           intersection() {
-            spoked_pinion(teeth, spokes, 2);
+            spoked_wheel(teeth, spokes, true);
             // Half-space starting at theta
             rotate([0, 0, split_theta])
               translate([-500, 0, 0])
@@ -282,18 +285,18 @@ module spoked_split_pinion(teeth, splits) {
   }
 }
 
-//spoked_split_pinion(66, 4, 8);
-//spoked_split_pinion(78, 5, 10);
-//spoked_split_pinion(102, 6, 12);
+//spoked_split_wheel(66, 4, 8);
+//spoked_split_wheel(78, 5, 10);
+//spoked_split_wheel(102, 6, 12);
 //split_ring(144, 12);
 
 if (Part_Type == "Wheel") {
   if (Splits < 2) {
-    pinion(Tooth_Count);
+    wheel(Tooth_Count);
   }
   else {
     difference() {
-      spoked_split_pinion(Tooth_Count, Splits);
+      spoked_split_wheel(Tooth_Count, Splits);
     }
   }
 }
