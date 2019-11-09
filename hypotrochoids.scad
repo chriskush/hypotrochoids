@@ -25,6 +25,9 @@ Wheel_Spoke_Width = 20;
 // Breadth of ring segments.
 Ring_Rind = 38.1;
 
+// Length of ring extendeders
+Ring_Thing_Length = 150;
+
 // Thickness of parts (at gear teeth).
 Part_Thickness = 10;
 
@@ -41,7 +44,7 @@ Tick_Mark_Width = 1;
 Mark_Relief = 0.2;
 
 // Twist of split-lines relative to part, in degrees.
-Split_Twist = 0.001;
+Split_Twist = -0.02;
 
 // How far away from origin to nudge splits?
 Split_Shove = 38.1;
@@ -208,8 +211,17 @@ module split_ring(teeth, splits) {
   split_sweep = 360 / splits;
   radius = (teeth * Tooth_Module / 2);
   doveX = radius + Ring_Rind - 3 * (Dovetail_Tail - Dovetail_Neck);
-  echo("radius", radius);
-  echo("doveX", doveX);
+
+  // Maintain compatibility with early prototypes
+  if (Tooth_Count == 144 && Tooth_Module == 5 && Part_Thickness == 10
+      && Dovetail_Neck == 20 && Dovetail_Tail == 24 && Dovetail_Depth == 4
+      && Splits == 12 && Split_Twist == -0.02) {
+    // Before dovetails were auto-positioned, we used 382 for the
+    // 144-tooth ring.
+    echo("Info: Overriding automatic dovetail position of ",doveX," with 382 for backward compatibility");
+    doveX = 382;
+  } // End of if - backward compatibility
+
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
     split_theta = Split_Twist + (split * split_sweep);
@@ -239,9 +251,24 @@ module split_ring(teeth, splits) {
       rotate([0, 0, split_theta + split_sweep])
         translate([doveX, 0, 0])
           dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness, sense=true);
-    }
-  }
-}
+      // "Things"
+      if (Ring_Thing_Length > 0 && splits > 0 && ((split % 2) == 1)) {
+        rotate([0, 0, split_theta + split_sweep / 2]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([Ring_Thing_Length, Ring_Rind, Part_Thickness]);
+                translate([Ring_Thing_Length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(Ring_Thing_Length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+    } // End of translate - this split away from the origin
+  } // End of for - each split
+} // End of module - split_ring
 
 module spoked_split_wheel(teeth, splits) {
   radius = (teeth * Tooth_Module / 2);
@@ -285,11 +312,6 @@ module spoked_split_wheel(teeth, splits) {
   }
 }
 
-//spoked_split_wheel(66, 4, 8);
-//spoked_split_wheel(78, 5, 10);
-//spoked_split_wheel(102, 6, 12);
-//split_ring(144, 12);
-
 if (Part_Type == "Wheel") {
   if (Splits < 2) {
     wheel(Tooth_Count);
@@ -309,5 +331,5 @@ else if (Part_Type == "Ring") {
   }
 }
 else {
-  echo("Unknown Part Type: ", Part_Type);
+  echo("ERROR: Unknown Part_Type: ", Part_Type);
 }
