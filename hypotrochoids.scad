@@ -35,7 +35,7 @@ Part_Thickness = 10;
 Pinhole_Diameter = 5;
 
 // Diameter of pen-holes for wheels.
-Penhole_Diameter = 10;
+Penhole_Diameter = 8;
 
 // Breadth of tick marks.
 Tick_Mark_Width = 1;
@@ -166,7 +166,7 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
-  holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
+  holes = floor((radius - Wheel_Bore - (Penhole_Diameter / 2)) / Wheel_Hole_Step);
   difference() {
     union() {
       difference() {
@@ -189,21 +189,36 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
         }
       }
     }
+    // (360 / Tooth_Count)
+    toothTheta = 360 / Tooth_Count;
     // Pen holes - must fall on spokes
     for (h = [0:1:holes]) {
       // Map hole to spoke. Skip even-numbered spokes if requested, to
       // accomodate splitting. 
       s = holeskip ? (2 * h) + 1 : h;
-      theta = s * (360 / spokes);
-      //theta = ((h * (holeskip ? 2 : 1)) + (holeskip ? 1 : 0)) * (360 / spokes);
+      holeTheta = (s * (360 / spokes)) % 360;
+      // Bias angle to align with teeth consistently
+      holeToothOffsetFractional = holeTheta / toothTheta;
+      holeToothOffsetWholeLo = floor(holeToothOffsetFractional);
+      holeToothOffsetWholeHi = ceil(holeToothOffsetFractional);
+      holeThetaAdjusted = abs(holeToothOffsetFractional - holeToothOffsetWholeLo) <= abs(holeToothOffsetWholeHi - holeToothOffsetFractional)
+        ? holeTheta - (toothTheta * (holeToothOffsetFractional - holeToothOffsetWholeLo))
+        : holeTheta + (toothTheta * (holeToothOffsetWholeHi - holeToothOffsetFractional));
+      //echo("toothTheta", toothTheta);
+      //echo("holeTheta", holeTheta);
+      //echo("holeThetaAdjusted", holeThetaAdjusted);
+      //echo("holeToothOffsetFractional", holeToothOffsetFractional);
+      //echo("holeToothOffsetWholeLo", holeToothOffsetWholeLo);
+      //echo("holeToothOffsetWholeHi", holeToothOffsetWholeHi);
+      // Plot the hole
       r = radius - (h * Wheel_Hole_Step);
-      x = r * cos(theta);
-      y = r * sin(theta);
+      x = r * cos(holeThetaAdjusted); //Adjusted);
+      y = r * sin(holeThetaAdjusted); //Adjusted);
       penhole(x, y);
     }
     // Delete any useless middle (how much?)
-    // translate([0, 0, -Part_Thickness / 2])
-    //   cylinder(h=Part_Thickness * 2, r=Wheel_Bore);
+    translate([0, 0, -Part_Thickness / 2])
+      cylinder(h=Part_Thickness * 2, r=Wheel_Bore);
   }
 }
 
@@ -298,13 +313,13 @@ module spoked_split_wheel(teeth, splits) {
           }
           // Negative dovetail knockouts
           rotate([0, 0, split_theta])
-            for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Dovetail_Tail])
+            for(dovex = [radius - Wheel_Rim - Dovetail_Tail - Wheel_Bore:-2 * Dovetail_Tail:Dovetail_Tail])
               translate([dovex, 0, 0])
                 dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
-          for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Dovetail_Tail])
+          for(dovex = [radius - Wheel_Rim - Dovetail_Tail - Wheel_Bore:-2 * Dovetail_Tail:Dovetail_Tail])
             translate([dovex, 0, 0])
               dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
       }
