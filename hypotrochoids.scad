@@ -313,13 +313,13 @@ module spoked_split_wheel(teeth, splits) {
           }
           // Negative dovetail knockouts
           rotate([0, 0, split_theta])
-            for(dovex = [radius - Wheel_Rim - Dovetail_Tail - Wheel_Bore:-2 * Dovetail_Tail:Dovetail_Tail])
+            for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Wheel_Bore + Dovetail_Tail])
               translate([dovex, 0, 0])
                 dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
-          for(dovex = [radius - Wheel_Rim - Dovetail_Tail - Wheel_Bore:-2 * Dovetail_Tail:Dovetail_Tail])
+          for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Wheel_Bore + Dovetail_Tail])
             translate([dovex, 0, 0])
               dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
       }
