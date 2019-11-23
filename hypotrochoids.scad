@@ -11,7 +11,10 @@ Splits = 1;
 Tooth_Module = 5;
 
 // Radial increment for wheel pen-holes.
-Wheel_Hole_Step = 3.175;
+Wheel_Penhole_Step = 3.175;
+
+// Number the penholes? (May require increasing OpenCSG "Turn off rendering at..." value!)
+Wheel_Penhole_Numbers = true;
 
 // Radius of unusable center area of wheels.
 Wheel_Bore = 31.75;
@@ -120,7 +123,7 @@ module wheel(teeth) {
     radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
     rstep = (radius - Wheel_Bore) / teeth;
     tstep = (360 / teeth) * 8;
-    holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
+    holes = floor((radius - Wheel_Bore) / Wheel_Penhole_Step);
     union() {
       difference() {
         herringbone_gear (modul=Tooth_Module, tooth_number=teeth, width=Part_Thickness, bore=0,
@@ -141,7 +144,7 @@ module wheel(teeth) {
       }
       for (t = [0:1:holes]) {
         theta = t * tstep;
-        r = radius - (t * Wheel_Hole_Step);
+        r = radius - (t * Wheel_Penhole_Step);
         rotate([0, 0, theta]) {
           translate([r, -Tick_Mark_Width/2, Part_Thickness/2]) {
             cube([radius - r + Wheel_Rim, Tick_Mark_Width, Mark_Relief]);
@@ -152,7 +155,7 @@ module wheel(teeth) {
     // Pen holes
     for (h = [0:1:holes]) {
       theta = h * tstep;
-      r = radius - (h * Wheel_Hole_Step);
+      r = radius - (h * Wheel_Penhole_Step);
       x = r * cos(theta);
       y = r * sin(theta);
       penhole(x, y);
@@ -166,7 +169,7 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
-  holes = floor((radius - Wheel_Bore - (Penhole_Diameter / 2)) / Wheel_Hole_Step);
+  holes = floor((radius - Wheel_Bore - (Penhole_Diameter / 2)) / Wheel_Penhole_Step);
   difference() {
     union() {
       difference() {
@@ -207,17 +210,19 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
         ? holeTheta - (toothTheta * (holeToothOffsetFractional - holeToothOffsetWholeLo))
         : holeTheta + (toothTheta * (holeToothOffsetWholeHi - holeToothOffsetFractional));
       // Plot the hole
-      r = radius - (h * Wheel_Hole_Step);
+      r = radius - (h * Wheel_Penhole_Step);
       x = r * cos(holeThetaAdjusted);
       y = r * sin(holeThetaAdjusted);
       penhole(x, y);
       // Annotate
-//      rotate(-holeThetaAdjusted)
-//        translate([r + Penhole_Diameter / 2, 0, 0])
-//          translate([0, 0, Part_Thickness - Mark_Relief])
-//            linear_extrude(height=(Mark_Relief + 1))//, convexity=4)
-//              circle(r=3);
-              //text(str(h), 5, "Arial");
+      if (Wheel_Penhole_Numbers) {
+        rotate(holeThetaAdjusted)
+          translate([r, Penhole_Diameter, 0])
+            translate([0, 0, (Part_Thickness / 2 - Mark_Relief)])
+              linear_extrude(height=(Mark_Relief + 1))
+                text(text=str(h), size=(Penhole_Diameter / 2), font="Arial",
+                    halign="center", valign="top");
+      }
     }
     // Delete any useless middle (how much?)
     translate([0, 0, -Part_Thickness / 2])
