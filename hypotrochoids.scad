@@ -182,7 +182,7 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
         rotate([0, 0, s * (360 / spokes)]) {
           // Translate by *0.333 (or something Dovetail_Depth-based) for non-hole spokes to even out dovetails
           spokeSlide = (holeskip && ((s % 2) == 0))
-            ? (Wheel_Spoke_Width / 2) - Dovetail_Depth
+            ? (Wheel_Spoke_Width - Dovetail_Depth) / 2
             : (Wheel_Spoke_Width / 2); 
           translate([0, -spokeSlide, 0])
             cube([radius, Wheel_Spoke_Width, Part_Thickness / 2]);
