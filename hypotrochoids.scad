@@ -11,7 +11,7 @@ Splits = 1;
 Tooth_Module = 5;
 
 // Radial increment for wheel pen-holes.
-Wheel_Hole_Step = 6.35;
+Wheel_Hole_Step = 3.175;
 
 // Radius of unusable center area of wheels.
 Wheel_Bore = 31.75;
@@ -188,7 +188,9 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
             cube([radius, Wheel_Spoke_Width, Part_Thickness / 2]);
         }
       }
-    }
+      // Add hub
+      cylinder(h=Part_Thickness / 2, r=Wheel_Bore + (Wheel_Spoke_Width / 2));
+      } // End of union - gear ring, spokes & hub
     // (360 / Tooth_Count)
     toothTheta = 360 / Tooth_Count;
     // Pen holes - must fall on spokes
@@ -197,24 +199,25 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
       // accomodate splitting. 
       s = holeskip ? (2 * h) + 1 : h;
       holeTheta = (s * (360 / spokes)) % 360;
-      // Bias angle to align with teeth consistently
+      // Snap the angle to the nearest tooth, so penholes align with teeth.
       holeToothOffsetFractional = holeTheta / toothTheta;
       holeToothOffsetWholeLo = floor(holeToothOffsetFractional);
       holeToothOffsetWholeHi = ceil(holeToothOffsetFractional);
       holeThetaAdjusted = abs(holeToothOffsetFractional - holeToothOffsetWholeLo) <= abs(holeToothOffsetWholeHi - holeToothOffsetFractional)
         ? holeTheta - (toothTheta * (holeToothOffsetFractional - holeToothOffsetWholeLo))
         : holeTheta + (toothTheta * (holeToothOffsetWholeHi - holeToothOffsetFractional));
-      //echo("toothTheta", toothTheta);
-      //echo("holeTheta", holeTheta);
-      //echo("holeThetaAdjusted", holeThetaAdjusted);
-      //echo("holeToothOffsetFractional", holeToothOffsetFractional);
-      //echo("holeToothOffsetWholeLo", holeToothOffsetWholeLo);
-      //echo("holeToothOffsetWholeHi", holeToothOffsetWholeHi);
       // Plot the hole
       r = radius - (h * Wheel_Hole_Step);
-      x = r * cos(holeThetaAdjusted); //Adjusted);
-      y = r * sin(holeThetaAdjusted); //Adjusted);
+      x = r * cos(holeThetaAdjusted);
+      y = r * sin(holeThetaAdjusted);
       penhole(x, y);
+      // Annotate
+//      rotate(-holeThetaAdjusted)
+//        translate([r + Penhole_Diameter / 2, 0, 0])
+//          translate([0, 0, Part_Thickness - Mark_Relief])
+//            linear_extrude(height=(Mark_Relief + 1))//, convexity=4)
+//              circle(r=3);
+              //text(str(h), 5, "Arial");
     }
     // Delete any useless middle (how much?)
     translate([0, 0, -Part_Thickness / 2])
