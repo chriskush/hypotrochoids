@@ -1,4 +1,5 @@
-$fn = 96;
+//$fn = 96;
+$fa = 1;
 
 /* Library for Involute Gears, Screws and Racks
 

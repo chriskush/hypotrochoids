@@ -11,7 +11,10 @@ Splits = 1;
 Tooth_Module = 5;
 
 // Radial increment for wheel pen-holes.
-Wheel_Hole_Step = 6.35;
+Wheel_Penhole_Step = 3.175;
+
+// Number the penholes? (May require increasing OpenCSG "Turn off rendering at..." value!)
+Wheel_Penhole_Numbers = true;
 
 // Radius of unusable center area of wheels.
 Wheel_Bore = 31.75;
@@ -35,7 +38,7 @@ Part_Thickness = 10;
 Pinhole_Diameter = 5;
 
 // Diameter of pen-holes for wheels.
-Penhole_Diameter = 10;
+Penhole_Diameter = 8;
 
 // Breadth of tick marks.
 Tick_Mark_Width = 1;
@@ -120,7 +123,7 @@ module wheel(teeth) {
     radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
     rstep = (radius - Wheel_Bore) / teeth;
     tstep = (360 / teeth) * 8;
-    holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
+    holes = floor((radius - Wheel_Bore) / Wheel_Penhole_Step);
     union() {
       difference() {
         herringbone_gear (modul=Tooth_Module, tooth_number=teeth, width=Part_Thickness, bore=0,
@@ -141,7 +144,7 @@ module wheel(teeth) {
       }
       for (t = [0:1:holes]) {
         theta = t * tstep;
-        r = radius - (t * Wheel_Hole_Step);
+        r = radius - (t * Wheel_Penhole_Step);
         rotate([0, 0, theta]) {
           translate([r, -Tick_Mark_Width/2, Part_Thickness/2]) {
             cube([radius - r + Wheel_Rim, Tick_Mark_Width, Mark_Relief]);
@@ -152,7 +155,7 @@ module wheel(teeth) {
     // Pen holes
     for (h = [0:1:holes]) {
       theta = h * tstep;
-      r = radius - (h * Wheel_Hole_Step);
+      r = radius - (h * Wheel_Penhole_Step);
       x = r * cos(theta);
       y = r * sin(theta);
       penhole(x, y);
@@ -166,7 +169,7 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
-  holes = floor((radius - Wheel_Bore) / Wheel_Hole_Step);
+  holes = floor((radius - Wheel_Bore - (Penhole_Diameter / 2)) / Wheel_Penhole_Step);
   difference() {
     union() {
       difference() {
@@ -182,28 +185,48 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
         rotate([0, 0, s * (360 / spokes)]) {
           // Translate by *0.333 (or something Dovetail_Depth-based) for non-hole spokes to even out dovetails
           spokeSlide = (holeskip && ((s % 2) == 0))
-            ? (Wheel_Spoke_Width / 2) - Dovetail_Depth
+            ? (Wheel_Spoke_Width - Dovetail_Depth) / 2
             : (Wheel_Spoke_Width / 2); 
           translate([0, -spokeSlide, 0])
             cube([radius, Wheel_Spoke_Width, Part_Thickness / 2]);
         }
       }
-    }
+      // Add hub
+      cylinder(h=Part_Thickness / 2, r=Wheel_Bore + (Wheel_Spoke_Width / 2));
+      } // End of union - gear ring, spokes & hub
+    // (360 / Tooth_Count)
+    toothTheta = 360 / Tooth_Count;
     // Pen holes - must fall on spokes
     for (h = [0:1:holes]) {
       // Map hole to spoke. Skip even-numbered spokes if requested, to
       // accomodate splitting. 
       s = holeskip ? (2 * h) + 1 : h;
-      theta = s * (360 / spokes);
-      //theta = ((h * (holeskip ? 2 : 1)) + (holeskip ? 1 : 0)) * (360 / spokes);
-      r = radius - (h * Wheel_Hole_Step);
-      x = r * cos(theta);
-      y = r * sin(theta);
+      holeTheta = (s * (360 / spokes)) % 360;
+      // Snap the angle to the nearest tooth, so penholes align with teeth.
+      holeToothOffsetFractional = holeTheta / toothTheta;
+      holeToothOffsetWholeLo = floor(holeToothOffsetFractional);
+      holeToothOffsetWholeHi = ceil(holeToothOffsetFractional);
+      holeThetaAdjusted = abs(holeToothOffsetFractional - holeToothOffsetWholeLo) <= abs(holeToothOffsetWholeHi - holeToothOffsetFractional)
+        ? holeTheta - (toothTheta * (holeToothOffsetFractional - holeToothOffsetWholeLo))
+        : holeTheta + (toothTheta * (holeToothOffsetWholeHi - holeToothOffsetFractional));
+      // Plot the hole
+      r = radius - (h * Wheel_Penhole_Step);
+      x = r * cos(holeThetaAdjusted);
+      y = r * sin(holeThetaAdjusted);
       penhole(x, y);
+      // Annotate
+      if (Wheel_Penhole_Numbers) {
+        rotate(holeThetaAdjusted)
+          translate([r, Penhole_Diameter, 0])
+            translate([0, 0, (Part_Thickness / 2 - Mark_Relief)])
+              linear_extrude(height=(Mark_Relief + 1))
+                text(text=str(h), size=(Penhole_Diameter / 2), font="Arial",
+                    halign="center", valign="top");
+      }
     }
     // Delete any useless middle (how much?)
-    // translate([0, 0, -Part_Thickness / 2])
-    //   cylinder(h=Part_Thickness * 2, r=Wheel_Bore);
+    translate([0, 0, -Part_Thickness / 2])
+      cylinder(h=Part_Thickness * 2, r=Wheel_Bore);
   }
 }
 
@@ -298,13 +321,13 @@ module spoked_split_wheel(teeth, splits) {
           }
           // Negative dovetail knockouts
           rotate([0, 0, split_theta])
-            for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Dovetail_Tail])
+            for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Wheel_Bore + Dovetail_Tail])
               translate([dovex, 0, 0])
                 dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=false);
         }
         // Positive dovetail addons
         rotate([0, 0, split_theta + split_sweep])
-          for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Dovetail_Tail])
+          for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Wheel_Bore + Dovetail_Tail])
             translate([dovex, 0, 0])
               dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
       }
