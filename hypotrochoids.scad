@@ -295,7 +295,24 @@ module split_ring(teeth, splits) {
 
 module spoked_split_wheel(teeth, splits) {
   radius = (teeth * Tooth_Module / 2);
-  spokes = 2 * splits;
+  spokes = 2 * splits; // Note: for the 40-tooth wheel (18 loops @ 144 ringteeth
+                       // replace this with "max(2 * splits, 8);" to ensure a certain
+		       // spoke count. Note also that a 40-tooth wheel, even with no
+		       // splits, can have a bore-out of zero (0) - maybe it's time
+		       // to implement a "max-radius" (where "radius" is not the
+		       // radius of the wheel, but the distance from the bore-hole
+		       // to the edge - the "pie depth" or "wedge height" or
+		       // something. Ultimately, you'd want "max build plate x/y"
+		       // params, and have the code fit the pie-slice to that
+		       // max-rect - and also, generate inner ring pieces.
+		       //
+		       // And then, the next enhancement is to split not just by
+		       // sectors, but by radii as well. Then the inner arcs of
+		       // large pie-wedges would have dovetails to mate with the
+		       // circumference of inner pieces - maybe just a ring, but
+		       // very large gears would require (for example) an outer
+		       // series of 8 sectors, an intermediate set of 4, and ten
+		       // a central disc.
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
