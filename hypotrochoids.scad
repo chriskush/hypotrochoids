@@ -46,6 +46,9 @@ Tick_Mark_Width = 1;
 // Relief height/depth of marks.
 Mark_Relief = 0.2;
 
+// Relief marks on bottom?
+Mark_Bottom = true;
+
 // Twist of split-lines relative to part, in degrees.
 Split_Twist = -0.02;
 
@@ -216,12 +219,15 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
       penhole(x, y);
       // Annotate
       if (Wheel_Penhole_Numbers) {
+        zOffset = Mark_Bottom ? -1 : (Part_Thickness / 2 - Mark_Relief);
+        xScale = Mark_Bottom ? -1 : 1;
         rotate(holeThetaAdjusted)
-          translate([r, Penhole_Diameter, 0])
-            translate([0, 0, (Part_Thickness / 2 - Mark_Relief)])
+          translate([r, Penhole_Diameter * 1.125, 0])
+            translate([0, 0, zOffset])
               linear_extrude(height=(Mark_Relief + 1))
-                text(text=str(h), size=(Penhole_Diameter / 2), font="Arial",
-                    halign="center", valign="top");
+                scale([xScale, 1, 1])
+                  text(text=str(h), size=(Penhole_Diameter / 2), font="Cascadia Code:Bold",
+                       halign="center", valign="top");
       }
     }
     // Delete any useless middle (how much?)
