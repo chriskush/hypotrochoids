@@ -28,7 +28,7 @@ Wheel_Spoke_Width = 20;
 // Breadth of ring segments.
 Ring_Rind = 38.1;
 
-// Length of ring extendeders
+// Length of ring extenders
 Ring_Thing_Length = 150;
 
 // Thickness of parts (at gear teeth).
@@ -172,7 +172,7 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
-  holes = floor((radius - Wheel_Bore - (Penhole_Diameter / 2)) / Wheel_Penhole_Step);
+  holes = floor((radius - Wheel_Bore - (Penhole_Diameter)) / Wheel_Penhole_Step);
   difference() {
     union() {
       difference() {
@@ -218,16 +218,23 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
       y = r * sin(holeThetaAdjusted);
       penhole(x, y);
       // Annotate
-      if (Wheel_Penhole_Numbers) {
+      if (Wheel_Penhole_Numbers && (r >= (Wheel_Bore + 2 * Penhole_Diameter))) {
         zOffset = Mark_Bottom ? -1 : (Part_Thickness / 2 - Mark_Relief);
         xScale = Mark_Bottom ? -1 : 1;
+        textR = (r > (Wheel_Bore + 2 * Penhole_Diameter)) ? r - Penhole_Diameter * 0.35 : r + Penhole_Diameter * 0.35;
+        textAlign = (r > (Wheel_Bore + 2 * Penhole_Diameter)) ? "left" : "right";
+        //textDrop = (r > (Wheel_Bore + 2 * Penhole_Diameter)) ? -Penhole_Diameter * 0.75 : Penhole_Diameter * 0.75;
+        textDrop = abs(holeToothOffsetFractional - holeToothOffsetWholeLo) <= abs(holeToothOffsetWholeHi - holeToothOffsetFractional)
+          ? Penhole_Diameter * 0.9 : -Penhole_Diameter * 0.9;
+        textDrop2 = (r < (Wheel_Bore + 2 * Penhole_Diameter)) ? -textDrop : textDrop;
+        textAlignV = textDrop2 <= 0 ? "bottom" : "top";
         rotate(holeThetaAdjusted)
-          translate([r, Penhole_Diameter * 1.125, 0])
+          translate([textR, textDrop2, 0])
             translate([0, 0, zOffset])
               linear_extrude(height=(Mark_Relief + 1))
                 scale([xScale, 1, 1])
                   text(text=str(h), size=(Penhole_Diameter / 2), font="Cascadia Code:Bold",
-                       halign="center", valign="top");
+                       halign=textAlign, valign=textAlignV);
       }
     }
     // Delete any useless middle (how much?)
@@ -301,8 +308,9 @@ module split_ring(teeth, splits) {
 
 module spoked_split_wheel(teeth, splits) {
   radius = (teeth * Tooth_Module / 2);
-  spokes = 2 * splits; // Note: for the 40-tooth wheel (18 loops @ 144 ringteeth
-                       // replace this with "max(2 * splits, 8);" to ensure a certain
+  //spokes = 2 * splits; // Note: for the 40-tooth wheel (18 loops @ 144 ringteeth
+           // replace this with "max(2 * splits, 8);" to ensure a certain
+  spokes = max(2 * splits, 8);
 		       // spoke count. Note also that a 40-tooth wheel, even with no
 		       // splits, can have a bore-out of zero (0) - maybe it's time
 		       // to implement a "max-radius" (where "radius" is not the
