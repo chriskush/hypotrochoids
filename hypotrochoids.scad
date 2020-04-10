@@ -1,14 +1,14 @@
 // Ring or wheel?
-Part_Type = "Wheel"; // ["Wheel", "Ring"]
+Part_Type = "Ring"; // ["Wheel", "Ring"]
 
 // How many teeth?
-Tooth_Count = 66;
+Tooth_Count = 144;
 
 // Split into how many parts?
-Splits = 1;
+Splits = 12;
 
 // Tooth rise/fall above ideal circle.
-Tooth_Module = 5;
+Tooth_Module = 5.0; //[1:0.5:10]
 
 // Radial increment for wheel pen-holes.
 Wheel_Penhole_Step = 3.175;
@@ -29,7 +29,10 @@ Wheel_Spoke_Width = 20;
 Ring_Rind = 38.1;
 
 // Length of ring extenders
-Ring_Thing_Length = 150;
+Ring_Thing_Length = 90; //[0:0.5:150]
+
+// The original 144x5 ring was printed with a twist of -0.02 and 90mm Things.
+// To match Thing hole placement, the 210x3.5 ring must print with 82.5mm Things.
 
 // Thickness of parts (at gear teeth).
 Part_Thickness = 10;
@@ -246,16 +249,56 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
 module split_ring(teeth, splits) {
   split_sweep = 360 / splits;
   radius = (teeth * Tooth_Module / 2);
-  doveX = radius + Ring_Rind - 3 * (Dovetail_Tail - Dovetail_Neck);
-
+  doveX = radius + Ring_Rind - 3.5 * (Dovetail_Tail - Dovetail_Neck);
+  // NOTE:
+  //  Some new information has recently come to light regarding
+  //  the size of ring gears, man.
+  //
+  //  Note that the Things are placed at (radius + Ring_Rind).
+  //  We were confused as to why this worked - shouldn't that
+  //  place the butt end of the Thing tangent to the ring's
+  //  outer circumference? Wouldn't you need to do
+  //     (radius + Ring_Rind - Fudge_Factor)
+  //  in order to ensure that the Thing was thoroughly connected
+  //  to the Ring?
+  //
+  //  As it turns out, the way the gear library is coded, the basic
+  //  "radius" computation (teeth * module / 2) yields the radius
+  //  of the *pitch* circle - but the rim_width parameter (which
+  //  we call Ring_Rind) is measured from the *root* circle.
+  //
+  //  (The pitch circle is the nominal gear size, midway-ish up the
+  //   teeth, while the root circle corresponds to the tooth valleys.)
+  //
+  // This is why no fudge-factor is needed; it's present implicitly,
+  // as the difference between the radii of the pitch circle (where
+  // "radius" ends) and the root circle (where rim_width/Ring_Rind
+  // begins).
+  //
+  // Going forward, we should make this fact explicit, to allow
+  // better control of positioning Ring accessories, *especially*
+  // the dovetails.
+  //
+  // Also, the Ring_Thing_Length parameter should change meaning,
+  // to represent the absolute distance from the center of the ring
+  // to the Things' fixing holes. This will permit generating rings
+  // which have consistent Fixing spacing without having to manually
+  // adjust the Thing length.
+  echo(str("INFO: Nominal ring radius is ",radius,"mm (",(radius/25.4),"in); diameter ",(2*radius),"mm (",((2*radius)/25.4),")in"));
+  echo(str("INFO: Ring-holes at ",(radius + (Ring_Rind * 0.667)),"mm"));
+  if (Ring_Thing_Length > 0) {
+    echo(str("INFO: Thing-holes at ",(radius + Ring_Rind + Ring_Thing_Length),"mm"));
+  }
   // Maintain compatibility with early prototypes
   if (Tooth_Count == 144 && Tooth_Module == 5 && Part_Thickness == 10
       && Dovetail_Neck == 20 && Dovetail_Tail == 24 && Dovetail_Depth == 4
-      && Splits == 12 && Split_Twist == -0.02) {
+      && Splits == 12) {
     // Before dovetails were auto-positioned, we used 382 for the
     // 144-tooth ring.
-    echo("Info: Overriding automatic dovetail position of ",doveX," with 382 for backward compatibility");
-    doveX = 382;
+    doveX = echo(str("WARN: Overriding automatic dovetail position of ",doveX,"mm with 382mm for backward compatibility")) 382;
+    if (Split_Twist != -0.02) {
+      Split_Twist = echo(str("WARN: Overriding Split_Twist value of ",Split_Twist,"deg with -0.02deg for backward compatibility")) -0.02;
+    }
   } // End of if - backward compatibility
 
   // Repeat whole enchilada for each split
