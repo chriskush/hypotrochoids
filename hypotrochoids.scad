@@ -67,6 +67,16 @@ Dovetail_Tail = 24;
 // Protrusion of dovetail tab
 Dovetail_Depth = 4;
 
+// Draw the print-bed platter under the first split-part?
+Print_Bed_Preview = true;
+
+// Max width of print bed for preview.
+Print_Bed_X_Size = 250;
+
+// Max depth of print bed for preview.
+Print_Bed_Y_Size = 200;
+
+
 use <gears.scad>
 use <pie.scad>
 use <dovetail.scad>
@@ -404,6 +414,10 @@ module spoked_split_wheel(teeth, splits) {
           for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Wheel_Bore + Dovetail_Tail])
             translate([dovex, 0, 0])
               dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
+      // Preview print bed?
+      if (Print_Bed_Preview && split == 0)
+        translate([Wheel_Bore * cos(split_sweep), 0, -10])
+          cube([Print_Bed_X_Size, Print_Bed_Y_Size, 5]);
       }
     }
   }
