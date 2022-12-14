@@ -31,13 +31,18 @@ Ring_Rind = 38.1;
 // Length of ring extenders
 Ring_Thing_Length = 90; //[0:0.5:150]
 
-// The original 144x5 ring was printed with a twist of -0.02 and 90mm Things.
+// Width and height of the box whose corners are where the Thing-bolts go.
+Ring_Thing_Box_Width = 500;
+Ring_Thing_Box_Height = 200;
+
+// The original 144x5 ring was printed with a Split-Twist of -0.02 and 90mm Things.
 // To match Thing hole placement, the 210x3.5 ring must print with 82.5mm Things.
+// The 140 gear
 
 // Thickness of parts (at gear teeth).
 Part_Thickness = 10;
 
-// Diameter of fixing-holes for rings.
+// Diameter of fixing-holes for ring parts (including things).
 Pinhole_Diameter = 5;
 
 // Diameter of pen-holes for wheels.
@@ -76,10 +81,22 @@ Print_Bed_X_Size = 250;
 // Max depth of print bed for preview.
 Print_Bed_Y_Size = 200;
 
-
 use <gears.scad>
 use <pie.scad>
 use <dovetail.scad>
+
+// Construct the four corners of the Thing bolthole bounding box.
+Ring_Thing_Box_UL = [ -Ring_Thing_Box_Width,  Ring_Thing_Box_Height ];
+Ring_Thing_Box_UR = [  Ring_Thing_Box_Width,  Ring_Thing_Box_Height ];
+Ring_Thing_Box_LL = [ -Ring_Thing_Box_Width, -Ring_Thing_Box_Height ];
+Ring_Thing_Box_LR = [  Ring_Thing_Box_Width, -Ring_Thing_Box_Height ];
+
+// Find the four angles at which Things must be constructed. (Bias results
+// from [-180..180] to [0...360])
+Ring_Thing_Angle_UL = atan2(Ring_Thing_Box_UL[0], Ring_Thing_Box_UL[1]) + 180.0;
+Ring_Thing_Angle_UR = atan2(Ring_Thing_Box_UR[0], Ring_Thing_Box_UR[1]) + 180.0;
+Ring_Thing_Angle_LL = atan2(Ring_Thing_Box_LL[0], Ring_Thing_Box_LL[1]) + 180.0;
+Ring_Thing_Angle_LR = atan2(Ring_Thing_Box_LR[0], Ring_Thing_Box_LR[1]) + 180.0;
 
 module hole(x, y, d)
 {
@@ -299,6 +316,7 @@ module split_ring(teeth, splits) {
   if (Ring_Thing_Length > 0) {
     echo(str("INFO: Thing-holes at ",(radius + Ring_Rind + Ring_Thing_Length),"mm"));
   }
+  echo(str(" NEOTHINGS: ",Ring_Thing_Angle_UL,"deg, ",Ring_Thing_Angle_UR,"deg, ",Ring_Thing_Angle_LL,"deg, ",Ring_Thing_Angle_LR,"deg"));
   // Maintain compatibility with early prototypes
   if (Tooth_Count == 144 && Tooth_Module == 5 && Part_Thickness == 10
       && Dovetail_Neck == 20 && Dovetail_Tail == 24 && Dovetail_Depth == 4
@@ -316,6 +334,25 @@ module split_ring(teeth, splits) {
     split_theta = Split_Twist + (split * split_sweep);
     xshove = Split_Shove * cos(split_theta + (split_sweep / 2));
     yshove = Split_Shove * sin(split_theta + (split_sweep / 2));
+    // Determine whether split gets a(ny) Thing(s).
+    add_ul_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_UL &&
+       split_theta + split_sweep >= Ring_Thing_Angle_UL);
+    add_ur_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_UR &&
+       split_theta + split_sweep >= Ring_Thing_Angle_UR);
+    add_ll_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_LL &&
+       split_theta + split_sweep >= Ring_Thing_Angle_LL);
+    add_lr_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_LR &&
+       split_theta + split_sweep >= Ring_Thing_Angle_LR);
+      //...that need a Thing.
+    add_thing_to_this_segment = add_ul_thing_to_this_segment || add_ur_thing_to_this_segment || add_ll_thing_to_this_segment || add_lr_thing_to_this_segment;
+    Ring_Thing_Length = 90;
+//!Need to start deriving ring-thing-length!
+//!Need to start deriving ring-thing-offset-angle!
+    echo(str(" NEOTHINGS: split covers ",split_theta," to ",split_theta+split_sweep));
     // Shove the split away from the X/Y origin
     translate([xshove, yshove, 0]) {
       // Intersect the ring with two halfspaces which create the split-sector
@@ -340,9 +377,10 @@ module split_ring(teeth, splits) {
       rotate([0, 0, split_theta + split_sweep])
         translate([doveX, 0, 0])
           dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness, sense=true);
-      // "Things"
-      if (Ring_Thing_Length > 0 && splits > 0 && ((split % 2) == 1)) {
-        rotate([0, 0, split_theta + split_sweep / 2]) {
+
+      // Add Thing if needed
+      if (add_ul_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_UL]) {
           translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
             difference() {
               union() {
@@ -355,6 +393,56 @@ module split_ring(teeth, splits) {
           } // End of translate - thing out to where the segment is
         } // End of rotate - thing to align with split segment
       } // End of if - make a thing for this part of the ring
+
+      // Add Thing if needed
+      if (add_ur_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_UR]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([Ring_Thing_Length, Ring_Rind, Part_Thickness]);
+                translate([Ring_Thing_Length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(Ring_Thing_Length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+
+      // Add Thing if needed
+      if (add_ll_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_LL]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([Ring_Thing_Length, Ring_Rind, Part_Thickness]);
+                translate([Ring_Thing_Length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(Ring_Thing_Length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+
+      // Add Thing if needed
+      if (add_lr_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_LR]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([Ring_Thing_Length, Ring_Rind, Part_Thickness]);
+                translate([Ring_Thing_Length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(Ring_Thing_Length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+
+
     } // End of translate - this split away from the origin
   } // End of for - each split
 } // End of module - split_ring
