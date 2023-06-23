@@ -2,12 +2,10 @@
 
 This repository contains OpenSCAD source code and ancillary supporting the
 construction of ring & pinion gears which are customized to permit drawing
-[hypotrochoids]() upon an underlying medium.
+[hypotrochoids](https://en.wikipedia.org/wiki/Hypotrochoid) upon an underlying medium.
 
 The appearance & petal count of the resulting curves depends on the relative
 numbers of gear teeth in the ring & pinion.
-
-A great debt is owed to Dr. Jörg Janssen for the `gears.scad` library.
 
 ## Contents
 
@@ -15,15 +13,14 @@ File|Description
 -|-
 `hypotrochoids.scad`|OpenSCAD source for rings and pinions.
 `hypotrochoids.json`|Presets for the above.
-`gears.scad`|Dr. Jörg Janssen's DIN gear library.
+`gears.scad`|**Old** copy of Dr. Jörg Janssen's DIN gear library, which has been updated and maintained as [chrisspen/gears](https://github.com/chrisspen/gears/).
+`pie.scad`|`pie` module from the [dotscad](https://github.com/dotscad/dotscad) project.
 `Teeth.xlsx`|Spreadsheet of petal counts.
 
 ## Functional Manual
 
 This section explains how to use the parts created by this library to draw
-hypotrochoids.
-
-Basic photo - "ring", "board", "pinion".
+[hypotrochoids](https://en.wikipedia.org/wiki/Hypotrochoid) [artworks](https://www.instagram.com/silent.hemiola/).
 
 Equipment terminology:
 
@@ -92,4 +89,18 @@ How to design & print the parts.
 
 ## Assembly
 
-- TBD.
+Be gentle - line up the parts square, and push down on a big sturdy flat work
+table. You will feel the layer lines on the part edges as distinct "clicks", as
+the parts join.
+
+When assembling the pie-wedges of pinions, it is better to get *all*
+the tabs-and-slot joints started. 
+
+## Attribution
+
+This work is based upon:
+
+- [Dr. Jörg Janssen's `gears.scad` library](https://www.thingiverse.com/thing:1604369)
+and its adopters, maintainers, and contributors at [chrisspen/gears](https://github.com/chrisspen/gears/)
+
+- [`pie.scad`](https://github.com/dotscad/dotscad/blob/master/pie.scad) from [dotscad](https://github.com/dotscad/dotscad).

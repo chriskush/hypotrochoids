@@ -1,3 +1,11 @@
+// @copyright  Chris Kush 2019, 2020, 2022
+// @file       hypotrochoids.scad
+// @source     https://github.com/chriskush/hypotrochoids/blob/main/hypotrochoids.scad
+// @license    http://creativecommons.org/licenses/LGPL/2.1/
+// @license    http://creativecommons.org/licenses/by-sa/3.0//
+// @brief      Mark arbitrary hypotrochoids on any flat, smooth medium.
+// @see        https://www.instagram.com/silent.hemiola/
+
 // Ring or wheel?
 Part_Type = "Ring"; // ["Wheel", "Ring"]
 

@@ -1,3 +1,10 @@
+// @copyright  Chris Kush 2019
+// @file       dovetail.scad
+// @source     https://github.com/chriskush/hypotrochoids/blob/main/dovetail.scad
+// @license    http://creativecommons.org/licenses/LGPL/2.1/
+// @license    http://creativecommons.org/licenses/by-sa/3.0//
+// @brief      Snap-together tabs-and-slots for parts too big to print.
+
 module dovetail(neck, tail, depth, thickness, sense) {
   // neck - narrow end of 'tail
   // tail - wide end of 'tail
