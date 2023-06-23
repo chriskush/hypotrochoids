@@ -1,3 +1,4 @@
+#/usr/bin/env bash
 RING=$1
 GEAR=$2
 LOOPS=1

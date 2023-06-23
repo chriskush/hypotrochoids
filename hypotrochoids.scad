@@ -1,14 +1,14 @@
 // Ring or wheel?
-Part_Type = "Wheel"; // ["Wheel", "Ring"]
+Part_Type = "Ring"; // ["Wheel", "Ring"]
 
 // How many teeth?
-Tooth_Count = 66;
+Tooth_Count = 144;
 
 // Split into how many parts?
-Splits = 1;
+Splits = 12;
 
 // Tooth rise/fall above ideal circle.
-Tooth_Module = 5;
+Tooth_Module = 5.0; //[1:0.5:10]
 
 // Radial increment for wheel pen-holes.
 Wheel_Penhole_Step = 3.175;
@@ -28,13 +28,30 @@ Wheel_Spoke_Width = 20;
 // Breadth of ring segments.
 Ring_Rind = 38.1;
 
-// Length of ring extendeders
-Ring_Thing_Length = 150;
+Ring_Thing_Box_Width = 945.0;
+Ring_Thing_Box_Height = 254.0;
+// Dimensions of the imaginary box where Thing-bolts go.
+
+// PROTO-series 144x5 rings were printed with 12 Splits, Twisted -0.02deg, with
+// 90mm-long Things protruding from the (angular) center of the Ring segment.
+// Making the Things 100mm long (to improve bracing and/or paper clearance)
+// would exceeds the standard Prusa bed size. This creates a Ring Thing Box
+// of 945x254mm. (To match this hole placement using the old center-and-length
+// Things, a 210x3.5 ring requires 82.5mm-long Things.)
+// - There are only two (2) types of ring segment, the type with a Thing and the
+//   type without. (Each segment has exactly twelve (12) teeth.
+//
+// The NEO-series 140x5 ring uses 14 splits, and a twist of -13.10deg; this:
+// - Ensures no tiny (poorly-printing) tooth-lets on the segment-to-
+//   segment interfaces.
+// - Ensures there are only three (3) types of ring pieces - two types of Thing-bearing
+//   segments (called "A" and "B"), and plain (un-Thinged) segments. Pieces of
+//   a given type are interchangeable.
 
 // Thickness of parts (at gear teeth).
 Part_Thickness = 10;
 
-// Diameter of fixing-holes for rings.
+// Diameter of fixing-holes for ring parts (including things).
 Pinhole_Diameter = 5;
 
 // Diameter of pen-holes for wheels.
@@ -45,6 +62,9 @@ Tick_Mark_Width = 1;
 
 // Relief height/depth of marks.
 Mark_Relief = 0.2;
+
+// Relief marks on bottom?
+Mark_Bottom = true;
 
 // Twist of split-lines relative to part, in degrees.
 Split_Twist = -0.02;
@@ -61,9 +81,31 @@ Dovetail_Tail = 24;
 // Protrusion of dovetail tab
 Dovetail_Depth = 4;
 
+// Draw the print-bed platter under the first split-part?
+Print_Bed_Preview = true;
+
+// Max width of print bed for preview.
+Print_Bed_X_Size = 250;
+
+// Max depth of print bed for preview.
+Print_Bed_Y_Size = 200;
+
 use <gears.scad>
 use <pie.scad>
 use <dovetail.scad>
+
+// Construct the four corners of the Thing bolthole bounding box.
+Ring_Thing_Box_UL = [ -Ring_Thing_Box_Width / 2.0,  Ring_Thing_Box_Height / 2.0 ];
+Ring_Thing_Box_UR = [  Ring_Thing_Box_Width / 2.0,  Ring_Thing_Box_Height / 2.0 ];
+Ring_Thing_Box_LL = [ -Ring_Thing_Box_Width / 2.0, -Ring_Thing_Box_Height / 2.0 ];
+Ring_Thing_Box_LR = [  Ring_Thing_Box_Width / 2.0, -Ring_Thing_Box_Height / 2.0 ];
+
+// Find the four angles at which Things must be constructed. (Bias results
+// from [-180..180] to [0...360])
+Ring_Thing_Angle_UL = (atan2(Ring_Thing_Box_UL[0], Ring_Thing_Box_UL[1]) + 180.0) % 360.0;
+Ring_Thing_Angle_UR = (atan2(Ring_Thing_Box_UR[0], Ring_Thing_Box_UR[1]) + 180.0) % 360.0;
+Ring_Thing_Angle_LL = (atan2(Ring_Thing_Box_LL[0], Ring_Thing_Box_LL[1]) + 180.0) % 360.0;
+Ring_Thing_Angle_LR = (atan2(Ring_Thing_Box_LR[0], Ring_Thing_Box_LR[1]) + 180.0) % 360.0;
 
 module hole(x, y, d)
 {
@@ -84,7 +126,7 @@ module penhole(x, y, d)
   hole(x, y, Penhole_Diameter);
 }
 
-module ring(teeth, pinhole_count) {
+module ring(teeth, pinhole_count, pinhole_angular_bias) {
   radius = (teeth * Tooth_Module / 2);
   difference() {
     union() {
@@ -111,7 +153,7 @@ module ring(teeth, pinhole_count) {
     r = radius + (Ring_Rind * 0.667);
     offset = 360 / pinhole_count / 2;
     for(p = [0:1:pinhole_count]) {
-      theta = offset + p * (360 / pinhole_count);
+      theta = pinhole_angular_bias + offset + p * (360 / pinhole_count);
       pinhole(r * cos(theta), r * sin(theta));
     }
   }
@@ -169,7 +211,7 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
   radius = (teeth * Tooth_Module / 2) - Wheel_Rim;
   rstep = (radius - Wheel_Bore) / teeth;
   tstep = (360 / teeth) * 8;
-  holes = floor((radius - Wheel_Bore - (Penhole_Diameter / 2)) / Wheel_Penhole_Step);
+  holes = floor((radius - Wheel_Bore - (Penhole_Diameter)) / Wheel_Penhole_Step);
   difference() {
     union() {
       difference() {
@@ -215,13 +257,23 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
       y = r * sin(holeThetaAdjusted);
       penhole(x, y);
       // Annotate
-      if (Wheel_Penhole_Numbers) {
+      if (Wheel_Penhole_Numbers && (r >= (Wheel_Bore + 2 * Penhole_Diameter))) {
+        zOffset = Mark_Bottom ? -1 : (Part_Thickness / 2 - Mark_Relief);
+        xScale = Mark_Bottom ? -1 : 1;
+        textR = (r > (Wheel_Bore + 2 * Penhole_Diameter)) ? r - Penhole_Diameter * 0.35 : r + Penhole_Diameter * 0.35;
+        textAlign = (r > (Wheel_Bore + 2 * Penhole_Diameter)) ? "left" : "right";
+        //textDrop = (r > (Wheel_Bore + 2 * Penhole_Diameter)) ? -Penhole_Diameter * 0.75 : Penhole_Diameter * 0.75;
+        textDrop = abs(holeToothOffsetFractional - holeToothOffsetWholeLo) <= abs(holeToothOffsetWholeHi - holeToothOffsetFractional)
+          ? Penhole_Diameter * 0.9 : -Penhole_Diameter * 0.9;
+        textDrop2 = (r < (Wheel_Bore + 2 * Penhole_Diameter)) ? -textDrop : textDrop;
+        textAlignV = textDrop2 <= 0 ? "bottom" : "top";
         rotate(holeThetaAdjusted)
-          translate([r, Penhole_Diameter, 0])
-            translate([0, 0, (Part_Thickness / 2 - Mark_Relief)])
+          translate([textR, textDrop2, 0])
+            translate([0, 0, zOffset])
               linear_extrude(height=(Mark_Relief + 1))
-                text(text=str(h), size=(Penhole_Diameter / 2), font="Arial",
-                    halign="center", valign="top");
+                scale([xScale, 1, 1])
+                  text(text=str(h), size=(Penhole_Diameter / 2), font="Cascadia Code:Bold",
+                       halign=textAlign, valign=textAlignV);
       }
     }
     // Delete any useless middle (how much?)
@@ -233,29 +285,85 @@ module spoked_wheel(teeth, spokes, holeskip = true) {
 module split_ring(teeth, splits) {
   split_sweep = 360 / splits;
   radius = (teeth * Tooth_Module / 2);
-  doveX = radius + Ring_Rind - 3 * (Dovetail_Tail - Dovetail_Neck);
+  doveX = radius + Ring_Rind - 3.5 * (Dovetail_Tail - Dovetail_Neck);
+  // NOTE:
+  //  Some new information has recently come to light regarding
+  //  the size of ring gears, man.
+  //
+  //  Note that the Things are placed at (radius + Ring_Rind).
+  //  We were confused as to why this worked - shouldn't that
+  //  place the butt end of the Thing tangent to the ring's
+  //  outer circumference? Wouldn't you need to do
+  //     (radius + Ring_Rind - Fudge_Factor)
+  //  in order to ensure that the Thing was thoroughly connected
+  //  to the Ring?
+  //
+  //  As it turns out, the way the gear library is coded, the basic
+  //  "radius" computation (teeth * module / 2) yields the radius
+  //  of the *pitch* circle - but the rim_width parameter (which
+  //  we call Ring_Rind) is measured from the *root* circle.
+  //
+  //  (The pitch circle is the nominal gear size, midway-ish up the
+  //   teeth, while the root circle corresponds to the tooth valleys.)
+  //
+  // This is why no fudge-factor is needed; it's present implicitly,
+  // as the difference between the radii of the pitch circle (where
+  // "radius" ends) and the root circle (where rim_width/Ring_Rind
+  // begins).
+  //
+  // Going forward, we should make this fact explicit, to allow
+  // better control of positioning Ring accessories, *especially*
+  // the dovetails.
+  //
+  echo(str("INFO: Nominal ring radius is ",radius,"mm (",(radius/25.4),"in); diameter ",(2*radius),"mm (",((2*radius)/25.4),")in"));
+  echo(str("INFO: Ring-holes at ",(radius + (Ring_Rind * 0.667)),"mm"));
+  echo(str("INFO: Things at ",Ring_Thing_Angle_UL,"deg, ",Ring_Thing_Angle_UR,"deg, ",Ring_Thing_Angle_LL,"deg, and ",Ring_Thing_Angle_LR,"deg"));
 
   // Maintain compatibility with early prototypes
-  if (Tooth_Count == 144 && Tooth_Module == 5 && Part_Thickness == 10
-      && Dovetail_Neck == 20 && Dovetail_Tail == 24 && Dovetail_Depth == 4
-      && Splits == 12 && Split_Twist == -0.02) {
+  if (Part_Type == "Ring" && Tooth_Count == 144 && Splits == 12
+      && Tooth_Module == 5 && Part_Thickness == 10
+      && Dovetail_Neck == 20 && Dovetail_Tail == 24 && Dovetail_Depth == 4) {
     // Before dovetails were auto-positioned, we used 382 for the
     // 144-tooth ring.
-    echo("Info: Overriding automatic dovetail position of ",doveX," with 382 for backward compatibility");
-    doveX = 382;
+    doveX = echo(str("WARN: Overriding automatic dovetail position of ",doveX,"mm with 382mm for backward compatibility")) 382;
+    if (Split_Twist != -0.02) {
+      Split_Twist = echo(str("WARN: Overriding Split_Twist value of ",Split_Twist,"deg with -0.02deg for backward compatibility")) -0.02;
+    }
   } // End of if - backward compatibility
+
+  thing_radius = sqrt((Ring_Thing_Box_UR[0]^2) + (Ring_Thing_Box_UR[1]^2));
+  thing_length = thing_radius - (radius + Ring_Rind);
+
+  echo(str("INFO: Things radius ",thing_radius,"mm"));
+
+  echo(str("INFO: Thingrithmetic:",Ring_Thing_Box_UR[0],"x, ",Ring_Thing_Box_UR[1],"y"));
+
+  echo(str("INFO: Things length ",thing_length,"mm"));
 
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
     split_theta = Split_Twist + (split * split_sweep);
     xshove = Split_Shove * cos(split_theta + (split_sweep / 2));
     yshove = Split_Shove * sin(split_theta + (split_sweep / 2));
+    // Determine whether this split gets a(ny) Thing(s).
+    add_ul_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_UL &&
+       split_theta + split_sweep >= Ring_Thing_Angle_UL);
+    add_ur_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_UR &&
+       split_theta + split_sweep >= Ring_Thing_Angle_UR);
+    add_ll_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_LL &&
+       split_theta + split_sweep >= Ring_Thing_Angle_LL);
+    add_lr_thing_to_this_segment =
+      (split_theta               <= Ring_Thing_Angle_LR &&
+       split_theta + split_sweep >= Ring_Thing_Angle_LR);
     // Shove the split away from the X/Y origin
     translate([xshove, yshove, 0]) {
       // Intersect the ring with two halfspaces which create the split-sector
       difference() {
         intersection() {
-          ring(teeth, splits);
+          ring(teeth, splits, Split_Twist);
           // Half-space starting at theta
           rotate([0, 0, split_theta])
             translate([-1000, 0, 0])
@@ -274,28 +382,101 @@ module split_ring(teeth, splits) {
       rotate([0, 0, split_theta + split_sweep])
         translate([doveX, 0, 0])
           dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness, sense=true);
-      // "Things"
-      if (Ring_Thing_Length > 0 && splits > 0 && ((split % 2) == 1)) {
-        rotate([0, 0, split_theta + split_sweep / 2]) {
+
+      // Add Thing for upper-left corner, if needed.
+      if (add_ul_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_UL]) {
           translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
             difference() {
               union() {
-                cube([Ring_Thing_Length, Ring_Rind, Part_Thickness]);
-                translate([Ring_Thing_Length, Ring_Rind / 2, 0])
+                cube([thing_length, Ring_Rind, Part_Thickness]);
+                translate([thing_length, Ring_Rind / 2, 0])
                   cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
               } // End of union - rounded at the free end!
-              pinhole(Ring_Thing_Length, Ring_Rind / 2);
+              pinhole(thing_length, Ring_Rind / 2);
             } // End of difference - thing from its pinhole
           } // End of translate - thing out to where the segment is
         } // End of rotate - thing to align with split segment
       } // End of if - make a thing for this part of the ring
+
+      // Add Thing for upper-right corner, if needed.
+      if (add_ur_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_UR]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([thing_length, Ring_Rind, Part_Thickness]);
+                translate([thing_length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(thing_length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+
+      // Add Thing for lower-left corner, if needed.
+      if (add_ll_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_LL]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([thing_length, Ring_Rind, Part_Thickness]);
+                translate([thing_length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(thing_length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+
+      // Add Thing for lower-right corner, if needed.
+      if (add_lr_thing_to_this_segment) {
+        rotate([0, 0, Ring_Thing_Angle_LR]) {
+          translate([radius + Ring_Rind, -(Ring_Rind / 2), 0]) {
+            difference() {
+              union() {
+                cube([thing_length, Ring_Rind, Part_Thickness]);
+                translate([thing_length, Ring_Rind / 2, 0])
+                  cylinder(h=Part_Thickness, d1=Ring_Rind, d2=Ring_Rind);
+              } // End of union - rounded at the free end!
+              pinhole(thing_length, Ring_Rind / 2);
+            } // End of difference - thing from its pinhole
+          } // End of translate - thing out to where the segment is
+        } // End of rotate - thing to align with split segment
+      } // End of if - make a thing for this part of the ring
+
+//      // Preview print bed?
+//      if (Print_Bed_Preview && split == 0)
+//        echo(str("doing thepreiveew"));
+//        translate([Wheel_Bore * cos(split_sweep), 0, -10])
+//          cube([Print_Bed_X_Size, Print_Bed_Y_Size, 5]);
     } // End of translate - this split away from the origin
   } // End of for - each split
 } // End of module - split_ring
 
 module spoked_split_wheel(teeth, splits) {
   radius = (teeth * Tooth_Module / 2);
-  spokes = 2 * splits;
+  //spokes = 2 * splits; // Note: for the 40-tooth wheel (18 loops @ 144 ringteeth
+           // replace this with "max(2 * splits, 8);" to ensure a certain
+  spokes = max(2 * splits, 8);
+		       // spoke count. Note also that a 40-tooth wheel, even with no
+		       // splits, can have a bore-out of zero (0) - maybe it's time
+		       // to implement a "max-radius" (where "radius" is not the
+		       // radius of the wheel, but the distance from the bore-hole
+		       // to the edge - the "pie depth" or "wedge height" or
+		       // something. Ultimately, you'd want "max build plate x/y"
+		       // params, and have the code fit the pie-slice to that
+		       // max-rect - and also, generate inner ring pieces.
+		       //
+		       // And then, the next enhancement is to split not just by
+		       // sectors, but by radii as well. Then the inner arcs of
+		       // large pie-wedges would have dovetails to mate with the
+		       // circumference of inner pieces - maybe just a ring, but
+		       // very large gears would require (for example) an outer
+		       // series of 8 sectors, an intermediate set of 4, and ten
+		       // a central disc.
   split_sweep = 360 / splits;
   // Repeat whole enchilada for each split
   for (split = [0:1:splits-1]) {
@@ -330,6 +511,10 @@ module spoked_split_wheel(teeth, splits) {
           for(dovex = [radius - Wheel_Rim - Dovetail_Tail:-2 * Dovetail_Tail:Wheel_Bore + Dovetail_Tail])
             translate([dovex, 0, 0])
               dovetail(neck=Dovetail_Neck, tail=Dovetail_Tail, depth=Dovetail_Depth, thickness=Part_Thickness / 2, sense=true);
+      // Preview print bed?
+      if (Print_Bed_Preview && split == 0)
+        translate([Wheel_Bore * cos(split_sweep), 0, -10])
+          cube([Print_Bed_X_Size, Print_Bed_Y_Size, 5]);
       }
     }
   }
@@ -347,7 +532,7 @@ if (Part_Type == "Wheel") {
 }
 else if (Part_Type == "Ring") {
   if (Splits < 2) {
-    ring(Tooth_Count);
+    ring(Tooth_Count, 0, 0);
   }
   else {
     split_ring(Tooth_Count, Splits);
