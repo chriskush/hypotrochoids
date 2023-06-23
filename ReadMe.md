@@ -35,8 +35,6 @@ Pinion|The small spoked gear wheel. The spokes have 8mm diameter holes for pens.
 
 Equipment notes:
 
-- The 
-
 - When oriented properly, the totally-flat side of the pinion (with the
   hole numbers marked) should face **up**; the spokes should be "floating"
   above the medium. This ensures the pen-hole numbers are visible, and reduces
