@@ -2,7 +2,8 @@
 
 This repository contains OpenSCAD source code and ancillary supporting the
 construction of ring & pinion gears which are customized to permit drawing
-[hypotrochoids](https://en.wikipedia.org/wiki/Hypotrochoid) upon an underlying medium.
+[hypotrochoids](https://en.wikipedia.org/wiki/Hypotrochoid) upon an underlying
+medium.
 
 The appearance & petal count of the resulting curves depends on the relative
 numbers of gear teeth in the ring & pinion.
@@ -20,7 +21,7 @@ File|Description
 ## Functional Manual
 
 This section explains how to use the parts created by this library to draw
-[hypotrochoids](https://en.wikipedia.org/wiki/Hypotrochoid) [artworks](https://www.instagram.com/silent.hemiola/).
+[hypotrochoid](https://en.wikipedia.org/wiki/Hypotrochoid) [artworks](https://www.instagram.com/silent.hemiola/).
 
 Equipment terminology:
 
